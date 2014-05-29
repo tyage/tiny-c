@@ -93,52 +93,6 @@ argument-expression-list:
   assign-expr
   argument-expression-list , assign-expr
   declaration-list declaration
-statement-list:
-  statement
-  statement-list statement
-expression:
-  assign-expr
-  expression , assign-expr
-assign-expr:
-  logical-OR-expr
-  identiﬁer = assign-expr
-logical-OR-expr:
-  logical-AND-expr
-  logical-OR-expr || logical-AND-expr
-logical-AND-expr:
-  equality-expr
-  logical-AND-expr && equality-expr
-equality-expr:
-  relational-expr
-  equality-expr == relational-expr
-  equality-expr != relational-expr
-relational-expr:
-  add-expr
-  relational-expr < add-expr
-  relational-expr > add-expr
-  relational-expr <= add-expr
-  relational-expr >= add-expr
-add-expr:
-  mult-expr
-  add-expr + mult-expr
-  add-expr - mult-expr
-mult-expr:
-  unary-expr
-  mult-expr * unary-expr
-  mult-expr / unary-expr
-unary-expr:
-  postﬁx-expr
-  - unary-expr
-postﬁx-expr:
-  primary-expr
-  identiﬁer ( argument-expression-listopt )
-primary-expr:
-  identiﬁer
-  constant
-  ( expression )
-argument-expression-list:
-  assign-expr
-  argument-expression-list , assign-expr
 ```
 
 ## lex ファイルの雛形
