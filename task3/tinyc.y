@@ -31,7 +31,8 @@ declarator:
   Identifier {}
   ;
 function_definition:
-  'int' declarator '(' parameter_type_listopt ')' compound_statement {}
+  'int' declarator '(' parameter_type_list ')' compound_statement {}
+  'int' declarator '(' ')' compound_statement {}
   ;
 parameter_type_list:
   parameter_declaration
@@ -50,7 +51,10 @@ statement:
   | 'return' expression ';' {}
   ;
 compound_statement:
-  '{' declaration_listopt statement_listopt '}' {}
+  '{' declaration_list statement_list '}' {}
+  '{' statement_list '}' {}
+  '{' declaration_list '}' {}
+  '{' '}' {}
   ;
 declaration_list:
   declaration {}
@@ -104,7 +108,8 @@ unary_expr:
   ;
 postfix_expr:
   primary_expr {}
-  | Identifier '(' argument_expression_listopt ')' {}
+  | Identifier '(' argument_expression_list ')' {}
+  | Identifier '(' ')' {}
   ;
 primary_expr:
   Identifier {}
