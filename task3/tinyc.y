@@ -18,7 +18,7 @@ program:
   ;
 external_declaration:
   declaration {}
-  | function_deﬁnition {}
+  | function_definition {}
   ;
 declaration:
   'int' declarator_list {}
@@ -30,7 +30,7 @@ declarator_list:
 declarator:
   Identifier {}
   ;
-function_deﬁnition:
+function_definition:
   'int' declarator '(' parameter_type_listopt ')' compound_statement {}
   ;
 parameter_type_list:
@@ -99,10 +99,10 @@ mult_expr:
   | mult_expr '/' unary_expr {}
   ;
 unary_expr:
-  postﬁx_expr {}
+  postfix_expr {}
   | '--' unary_expr {}
   ;
-postﬁx_expr:
+postfix_expr:
   primary_expr {}
   | Identifier '(' argument_expression_listopt ')' {}
   ;
