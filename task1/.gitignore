@@ -1,0 +1,4 @@
+calc.tab.c
+calc
+lex.yy.c
+calc.tab.h
