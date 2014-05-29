@@ -1,20 +1,17 @@
 %option noyywrap
 %{
-int yylval;
+#include "calc.tab.h"
+int yyerror (char *s);
 %}
 digit [0-9]
 %%
 {digit}+ {
 yylval = atoi(yytext);
-printf("INT = %d\n", yylval);
+return Integer;
 }
 "+"|"*" {
-printf("OPR = %s\n", yytext);
+return *yytext;
 }
 [ \t\n] ; /* スペース，タブ，改行は無視 */
-. ;
+. yyerror("Error: invalid character");
 %%
-int main()
-{
-yylex();
-}

@@ -454,8 +454,9 @@ int yy_flex_debug = 0;
 char *yytext;
 #line 1 "calc.l"
 #line 3 "calc.l"
-int yylval;
-#line 459 "lex.yy.c"
+#include "calc.tab.h"
+int yyerror (char *s);
+#line 460 "lex.yy.c"
 
 #define INITIAL 0
 
@@ -637,9 +638,9 @@ YY_DECL
 	register char *yy_cp, *yy_bp;
 	register int yy_act;
     
-#line 6 "calc.l"
+#line 7 "calc.l"
 
-#line 643 "lex.yy.c"
+#line 644 "lex.yy.c"
 
 	if ( !(yy_init) )
 		{
@@ -724,36 +725,36 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 7 "calc.l"
+#line 8 "calc.l"
 {
 yylval = atoi(yytext);
-printf("INT = %d\n", yylval);
+return Integer;
 }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 11 "calc.l"
+#line 12 "calc.l"
 {
-printf("OPR = %s\n", yytext);
+return *yytext;
 }
 	YY_BREAK
 case 3:
 /* rule 3 can match eol */
 YY_RULE_SETUP
-#line 14 "calc.l"
+#line 15 "calc.l"
 ; /* スペース，タブ，改行は無視 */
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 15 "calc.l"
-;
+#line 16 "calc.l"
+yyerror("Error: invalid character");
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 16 "calc.l"
+#line 17 "calc.l"
 ECHO;
 	YY_BREAK
-#line 757 "lex.yy.c"
+#line 758 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -1750,11 +1751,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 16 "calc.l"
+#line 17 "calc.l"
 
 
-int main()
-{
-yylex();
-}
 
