@@ -1,2 +1,4 @@
+lex.yy.c
 tinyc.tab.c
 tinyc.tab.h
+tinyc
