@@ -136,7 +136,6 @@ argument_expression_list:
 extern int yylineno;
 
 int yyerror(char *s) {
-  fprintf(stderr, "%d: %s\n", yylineno, s);
   return 0;
 }
 int main() {
