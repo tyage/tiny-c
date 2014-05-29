@@ -13,108 +13,108 @@
 %%
 
 program:
-  external-declaration {}
-  | program external-declaration {}
+  external_declaration {}
+  | program external_declaration {}
   ;
-external-declaration:
+external_declaration:
   declaration {}
-  | function-deﬁnition {}
+  | function_deﬁnition {}
   ;
 declaration:
-  'int' declarator-list {}
+  'int' declarator_list {}
   ;
-declarator-list:
+declarator_list:
   declarator {}
-  | declarator-list ',' declarator {}
+  | declarator_list ',' declarator {}
   ;
 declarator:
   Identifier {}
   ;
-function-deﬁnition:
-  'int' declarator '(' parameter-type-listopt ')' compound-statement {}
+function_deﬁnition:
+  'int' declarator '(' parameter_type_listopt ')' compound_statement {}
   ;
-parameter-type-list:
-  parameter-declaration
-  | parameter-type-list ',' parameter-declaration {}
+parameter_type_list:
+  parameter_declaration
+  | parameter_type_list ',' parameter_declaration {}
   ;
-parameter-declaration:
+parameter_declaration:
   'int' declarator {}
   ;
 statement:
   ';' {}
   | expression ';' {}
-  | compound-statement {}
+  | compound_statement {}
   | 'if' '(' expression ')' statement {}
   | 'if' '(' expression ')' statement 'else' statement {}
   | 'while' '(' expression ')' statement {}
   | 'return' expression ';' {}
   ;
-compound-statement:
-  '{' declaration-listopt statement-listopt '}' {}
+compound_statement:
+  '{' declaration_listopt statement_listopt '}' {}
   ;
-declaration-list:
+declaration_list:
   declaration {}
-  | declaration-list declaration {}
+  | declaration_list declaration {}
   ;
-statement-list:
+statement_list:
   statement {}
-  | statement-list statement {}
+  | statement_list statement {}
   ;
 expression:
-  assign-expr {}
-  | expression ',' assign-expr {}
+  assign_expr {}
+  | expression ',' assign_expr {}
   ;
-assign-expr:
-  logical-OR-expr {}
-  | Identifier '=' assign-expr {}
+assign_expr:
+  logical_OR_expr {}
+  | Identifier '=' assign_expr {}
   ;
-logical-OR-expr:
-  logical-AND-expr {}
-  | logical-OR-expr '||' logical-AND-expr {}
+logical_OR_expr:
+  logical_AND_expr {}
+  | logical_OR_expr '||' logical_AND_expr {}
   ;
-logical-AND-expr:
-  equality-expr {}
-  | logical-AND-expr '&&' equality-expr {}
+logical_AND_expr:
+  equality_expr {}
+  | logical_AND_expr '&&' equality_expr {}
   ;
-equality-expr:
-  relational-expr {}
-  | equality-expr '==' relational-expr {}
-  | equality-expr '!=' relational-expr {}
+equality_expr:
+  relational_expr {}
+  | equality_expr '==' relational_expr {}
+  | equality_expr '!=' relational_expr {}
   ;
-relational-expr:
-  add-expr {}
-  | relational-expr '<' add-expr {}
-  | relational-expr '>' add-expr {}
-  | relational-expr '<=' add-expr {}
-  | relational-expr '>=' add-expr {}
+relational_expr:
+  add_expr {}
+  | relational_expr '<' add_expr {}
+  | relational_expr '>' add_expr {}
+  | relational_expr '<=' add_expr {}
+  | relational_expr '>=' add_expr {}
   ;
-add-expr:
-  mult-expr {}
-  | add-expr '+' mult-expr {}
-  | add-expr '-' mult-expr {}
+add_expr:
+  mult_expr {}
+  | add_expr '+' mult_expr {}
+  | add_expr '--' mult_expr {}
   ;
-mult-expr:
-  unary-expr {}
-  | mult-expr '*' unary-expr {}
-  | mult-expr '/' unary-expr {}
+mult_expr:
+  unary_expr {}
+  | mult_expr '*' unary_expr {}
+  | mult_expr '/' unary_expr {}
   ;
-unary-expr:
-  postﬁx-expr {}
-  | '-' unary-expr {}
+unary_expr:
+  postﬁx_expr {}
+  | '--' unary_expr {}
   ;
-postﬁx-expr:
-  primary-expr {}
-  | Identifier '(' argument-expression-listopt ')' {}
+postﬁx_expr:
+  primary_expr {}
+  | Identifier '(' argument_expression_listopt ')' {}
   ;
-primary-expr:
+primary_expr:
   Identifier {}
   | Integer {}
   | '(' expression ')' {}
   ;
-argument-expression-list:
-  assign-expr {}
-  | argument-expression-list ',' assign-expr {}
-  | declaration-list declaration {}
+argument_expression_list:
+  assign_expr {}
+  | argument_expression_list ',' assign_expr {}
+  | declaration_list declaration {}
   ;
 
 %%
