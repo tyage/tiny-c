@@ -1,8 +1,14 @@
 %{
 %}
 %error_verbose
-%token Integer Identifer . . .
-· · ·
+
+%union {
+  int int_value;
+  char* str_value;
+}
+
+%token <int_value> Integer
+%token <str_value> Identifier
 
 %%
 
@@ -22,7 +28,7 @@ declarator-list:
   | declarator-list ',' declarator {}
   ;
 declarator:
-  identiﬁer {}
+  Identifier {}
   ;
 function-deﬁnition:
   'int' declarator '(' parameter-type-listopt ')' compound-statement {}
@@ -60,7 +66,7 @@ expression:
   ;
 assign-expr:
   logical-OR-expr {}
-  | identiﬁer '=' assign-expr {}
+  | Identifier '=' assign-expr {}
   ;
 logical-OR-expr:
   logical-AND-expr {}
@@ -98,11 +104,11 @@ unary-expr:
   ;
 postﬁx-expr:
   primary-expr {}
-  | identiﬁer '(' argument-expression-listopt ')' {}
+  | Identifier '(' argument-expression-listopt ')' {}
   ;
 primary-expr:
-  identiﬁer {}
-  | constant {}
+  Identifier {}
+  | Integer {}
   | '(' expression ')' {}
   ;
 argument-expression-list:

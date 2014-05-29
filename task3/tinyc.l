@@ -10,10 +10,14 @@
   yylval = atoi(yytext);
   return Integer;
 }
-"+"|"*"|"-" {
+'+'|'*'|'-'|'/'|','|'('|')'|'{'|'}'|';'|'int'|'if'|'while'|'return'|'='|'||'|'&&'|
+  '=='|'!='|'<'|'>'|'<='|'>=' {
   return *yytext;
 }
-[ \t\n] ; /* スペース，タブ，改行は無視 */
+[A-Za-z][A-Za-z_0-9]* {
+  return Identifier;
+}
+[ \t\n] ;
 . yyerror("Error: invalid character");
 
 %%
