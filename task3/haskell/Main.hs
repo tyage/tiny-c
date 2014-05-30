@@ -3,33 +3,83 @@ import Text.ParserCombinators.Parsec.Expr
 import qualified Text.ParserCombinators.Parsec.Token as P
 import Text.ParserCombinators.Parsec.Language
 
+-- TODO move to another file
+data Expr = Integer
+          | Mul Expr Expr
+          | Div Expr Expr
+          | Plus Expr Expr
+          | Minus Expr Expr
+          | Lt Expr Expr
+          | Gt Expr Expr
+          | Le Expr Expr
+          | Ge Expr Expr
+          | Equal Expr Expr
+          | NotEqual Expr Expr
+          | And Expr Expr
+          | Or Expr Expr
+
 lexer  = P.makeTokenParser(emptyDef)
-number = P.natural lexer
-parens = P.parens lexer
 natural = P.natural lexer
 reservedOp = P.reservedOp lexer
+parserIdentifier = P.identifier lexer
 
-operatorSystem :: Parser Integer
-operatorSystem = buildExpressionParser operator factor
+logicalOrExpr :: Parser Expr
+logicalOrExpr = buildExpressionParser operator unaryExpr <?> "expression"
 
-operator = [[op "*" (*) AssocLeft, op "/" div AssocLeft]
-           ,[op "+" (+) AssocLeft,op "-" (-) AssocLeft]]
+operator = [[op "*" Mul AssocLeft, op "/" Div AssocLeft]
+           ,[op "+" Plus AssocLeft, op "-" Minus AssocLeft]
+           ,[op "<" Lt AssocLeft, op ">" Gt AssocLeft,
+             op "<=" Le AssocLeft, op ">=" Ge AssocLeft]
+           ,[op "==" Equal AssocLeft, op "!=" NotEqual AssocLeft]
+           ,[op "&&" And AssocLeft]
+           ,[op "||" Or AssocLeft]]
           where
             op s f assoc
               = Infix(do
                         reservedOp s
                         return f
-                      <?> "operator")
+                        <?> "operator")
               assoc
 
-factor :: Parser Integer
-factor = parens operatorSystem
-      <|> natural
+unaryExpr :: Parser Expr
+unaryExpr = postfixExpr
+            <|> do _ <- char '-'
+                   p <- unaryExpr
+                   -- minus p
+                   return p
+            <?> "unary expression"
+
+postfixExpr :: Parser Expr
+postfixExpr = primaryExpr
+{-
+              <|> do name <- identifier
+                     arg <- between (symbol "(") (symbol ")") argumentExprList
+                     -- function call
+                     return arg
+-}
+              <?> "postfix expression"
+
+primaryExpr :: Parser Expr
+primaryExpr = -- identifier
+              natural
+              -- <|> do between (symbol "(") (symbol ")") expression
+              <?> "primary expression"
+
+{-
+identifier :: Parser Identifier
+identifier = do name <- parserIdentifier
+                return name
+
+constant :: Parser Constant
+constant = do num <- natural
+              return (Constant num)
+           <?> "constant"
+-}
 
 run :: String -> String
-run input = case parse operatorSystem "Test" input of
-            Left   err -> show err
-            Right  val -> show val
+run input = case parse logicalOrExpr "Test" input of
+            Left  err -> show err
+            Right val -> show val
 
 main :: IO ()
 main = do
