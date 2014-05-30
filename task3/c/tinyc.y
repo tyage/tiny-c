@@ -33,7 +33,7 @@ external_declaration:
   | function_definition {}
   ;
 declaration:
-  TYPE_INT declarator_list {}
+  TYPE_INT declarator_list SEMICOLON {}
   ;
 declarator_list:
   declarator {}
@@ -44,7 +44,7 @@ declarator:
   ;
 function_definition:
   TYPE_INT declarator LEFT_PAR parameter_type_list RIGHT_PAR compound_statement {}
-  TYPE_INT declarator LEFT_PAR RIGHT_PAR compound_statement {}
+  | TYPE_INT declarator LEFT_PAR RIGHT_PAR compound_statement {}
   ;
 parameter_type_list:
   parameter_declaration
@@ -64,9 +64,9 @@ statement:
   ;
 compound_statement:
   LEFT_BRACE declaration_list statement_list RIGHT_BRACE {}
-  LEFT_BRACE statement_list RIGHT_BRACE {}
-  LEFT_BRACE declaration_list RIGHT_BRACE {}
-  LEFT_BRACE RIGHT_BRACE {}
+  | LEFT_BRACE statement_list RIGHT_BRACE {}
+  | LEFT_BRACE declaration_list RIGHT_BRACE {}
+  | LEFT_BRACE RIGHT_BRACE {}
   ;
 declaration_list:
   declaration {}
@@ -82,7 +82,7 @@ expression:
   ;
 assign_expr:
   logical_OR_expr {}
-  | IDENTIFIER OP_EQUAL assign_expr {}
+  | IDENTIFIER OP_ASSIGN assign_expr {}
   ;
 logical_OR_expr:
   logical_AND_expr {}
