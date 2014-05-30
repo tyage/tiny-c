@@ -79,8 +79,7 @@ postfixExpr = primaryExpr
 
 primaryExpr :: Parser Expr
 primaryExpr = -- identifier
-              do p <- natural
-                 return (Const p)
+              constant
               -- <|> do between (symbol "(") (symbol ")") expression
               <?> "primary expression"
 
@@ -88,12 +87,12 @@ primaryExpr = -- identifier
 identifier :: Parser Identifier
 identifier = do name <- parserIdentifier
                 return name
-
-constant :: Parser Constant
-constant = do num <- natural
-              return (Constant num)
-           <?> "constant"
 -}
+
+constant :: Parser Expr
+constant = do num <- natural
+              return (Const num)
+           <?> "constant"
 
 run :: String -> String
 run input = case parse logicalOrExpr "Test" input of
