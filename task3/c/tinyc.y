@@ -1,4 +1,7 @@
 %{
+#include <stdio.h>
+int yylex(void);
+int yyerror (char *s);
 %}
 %error_verbose
 
@@ -136,6 +139,7 @@ argument_expression_list:
 extern int yylineno;
 
 int yyerror(char *s) {
+  fprintf(stderr, "%s\n", s);
   return 0;
 }
 int main() {
