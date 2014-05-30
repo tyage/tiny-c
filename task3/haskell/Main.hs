@@ -4,7 +4,7 @@ import qualified Text.ParserCombinators.Parsec.Token as P
 import Text.ParserCombinators.Parsec.Language
 
 -- TODO move to another file
-data Expr = Integer
+data Expr = Const Integer
           | Mul Expr Expr
           | Div Expr Expr
           | Plus Expr Expr
@@ -17,6 +17,24 @@ data Expr = Integer
           | NotEqual Expr Expr
           | And Expr Expr
           | Or Expr Expr
+
+showExpr :: String -> Expr -> Expr -> String
+showExpr s e1 e2 = "(" ++ s ++ " " ++ show e1 ++ " " ++ show e2 ++ ")"
+
+instance Show Expr where
+  show (Const i) = show i
+  show (Mul e1 e2) = showExpr "*" e1 e2
+  show (Div e1 e2) = showExpr "/" e1 e2
+  show (Plus e1 e2) = showExpr "+" e1 e2
+  show (Minus e1 e2) = showExpr "-" e1 e2
+  show (Lt e1 e2) = showExpr "<" e1 e2
+  show (Gt e1 e2) = showExpr ">" e1 e2
+  show (Le e1 e2) = showExpr "<=" e1 e2
+  show (Ge e1 e2) = showExpr ">=" e1 e2
+  show (Equal e1 e2) = showExpr "==" e1 e2
+  show (NotEqual e1 e2) = showExpr "!=" e1 e2
+  show (And e1 e2) = showExpr "&&" e1 e2
+  show (Or e1 e2) = showExpr "||" e1 e2
 
 lexer  = P.makeTokenParser(emptyDef)
 natural = P.natural lexer
@@ -61,7 +79,8 @@ postfixExpr = primaryExpr
 
 primaryExpr :: Parser Expr
 primaryExpr = -- identifier
-              natural
+              do p <- natural
+                 return (Const p)
               -- <|> do between (symbol "(") (symbol ")") expression
               <?> "primary expression"
 
