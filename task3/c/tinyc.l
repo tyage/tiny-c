@@ -4,10 +4,9 @@
 #include "tinyc.tab.h"
 int yyerror (char *s);
 %}
-digit [0-9]
 %%
 
-{digit}+ {
+[0-9]+ {
   return INTEGER;
 }
 "("                         { return LEFT_PAR; }
@@ -37,7 +36,7 @@ digit [0-9]
 [A-Za-z][A-Za-z_0-9]* {
   return IDENTIFIER;
 }
-[ \t\n] ;
+[ \t\n\r] ;
 . yyerror("Error: invalid character");
 
 %%
