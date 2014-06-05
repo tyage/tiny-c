@@ -114,10 +114,6 @@ identifier = Identifier <$> parserIdentifier
              <?> "identifier"
 
 {-
-declarator :: Parser Expr
-declarator = identifier
-             <?> "declarator"
-
 functionDefinition :: Parser Expr
 functionDefinition = do _ <- string "int"
                         d <- declarator
@@ -249,11 +245,6 @@ argumentExprList = assignExpr
                           a <- assignExpr
                           return a
                    <?> "argument expression list"
-
-identifier :: Parser Expr
-identifier = do name <- parserIdentifier
-                return (Identifier name)
-             <?> "identifier"
 
 constant :: Parser Constant
 constant = do num <- natural
