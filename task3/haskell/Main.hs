@@ -2,12 +2,31 @@ import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.Parsec.Expr
 import qualified Text.ParserCombinators.Parsec.Token as P
 import Text.ParserCombinators.Parsec.Language
+import Control.Applicative ((<$>))
+import Control.Monad
 
 -- TODO: move to another file
-data Program = ExternalDeclaration String
+data Program = ExDecl ExternalDeclaration
+             | ExDeclList Program ExternalDeclaration
 
 instance Show Program where
-  show (ExternalDeclaration s) = show s
+  show (ExDecl externalDeclaration) = show externalDeclaration
+  show (ExDeclList program externalDeclaration) = show program ++ "\n" ++ show externalDeclaration
+
+data ExternalDeclaration = Decl Declaration
+                         | FuncDef FunctionDefinition
+
+instance Show ExternalDeclaration where
+  show (Decl declaration) = show declaration
+  show (FuncDef functionDefinition) = show functionDefinition
+
+data Declaration = Hoge String
+instance Show Declaration where
+  show (Hoge s) = show s
+
+data FunctionDefinition = Fuga String
+instance Show FunctionDefinition where
+  show (Fuga s) = show s
 
 {-
 data Statement = EmptyStatement
@@ -59,30 +78,24 @@ parserIdentifier = P.identifier lexer
 symbol = P.symbol lexer
 
 program :: Parser Program
-program = do s <- string "string"
-             return (ExternalDeclaration s)
-{-
-program :: Parser Program
-program = externalDeclaration
-          <|> do p <- program
-                 e <- externalDeclaration
-                 return p
+program = ExDecl <$> externalDeclaration
+          <|> liftM2 ExDeclList program externalDeclaration
           <?> "program"
--}
 
-{-
-externalDeclaration :: Parser Expr
-externalDeclaration = declaration
-                      <|> functionDefinition
+externalDeclaration :: Parser ExternalDeclaration
+externalDeclaration = Decl <$> declaration
+                      <|> FuncDef <$> functionDefinition
                       <?> "external declaration"
 
-declaration :: Parser Expr
-declaration = do _ <- string "int"
-                 l <- declaratorList
-                 _ <- string ";"
-                 return l
-              <?> "declaration"
+declaration :: Parser Declaration
+declaration = do h <- string "hoge"
+                 return (Hoge h)
 
+functionDefinition :: Parser FunctionDefinition
+functionDefinition = do h <- string "hoge"
+                        return (Fuga h)
+
+{-
 declaratorList :: Parser Expr
 declaratorList = declarator
                  <|> do l <- declaratorList
@@ -245,4 +258,4 @@ run input = case parse program "Test" input of
 
 main :: IO ()
 main = do
-  putStrLn (run "string")
+  putStrLn (run "hoge")
