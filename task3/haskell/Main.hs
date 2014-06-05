@@ -3,8 +3,21 @@ import Text.ParserCombinators.Parsec.Expr
 import qualified Text.ParserCombinators.Parsec.Token as P
 import Text.ParserCombinators.Parsec.Language
 
--- TODO move to another file
+-- TODO: move to another file
+data Program = ExternalDeclaration String
+
+instance Show Program where
+  show (ExternalDeclaration s) = show s
+
+{-
+data Statement = EmptyStatement
+               | Expression Expr
+               | If Expr Statement Statement
+               | While Expr Statement
+               | Return Expr
+
 data Expr = Const Integer
+          | Identifier String
           | Mul Expr Expr
           | Div Expr Expr
           | Plus Expr Expr
@@ -17,6 +30,8 @@ data Expr = Const Integer
           | NotEqual Expr Expr
           | And Expr Expr
           | Or Expr Expr
+
+data Constant = Constant Integer
 
 showExpr :: String -> Expr -> Expr -> String
 showExpr s e1 e2 = "(" ++ s ++ " " ++ show e1 ++ " " ++ show e2 ++ ")"
@@ -35,11 +50,136 @@ instance Show Expr where
   show (NotEqual e1 e2) = showExpr "!=" e1 e2
   show (And e1 e2) = showExpr "&&" e1 e2
   show (Or e1 e2) = showExpr "||" e1 e2
+-}
 
 lexer  = P.makeTokenParser(emptyDef)
 natural = P.natural lexer
 reservedOp = P.reservedOp lexer
 parserIdentifier = P.identifier lexer
+symbol = P.symbol lexer
+
+program :: Parser Program
+program = do s <- string "string"
+             return (ExternalDeclaration s)
+{-
+program :: Parser Program
+program = externalDeclaration
+          <|> do p <- program
+                 e <- externalDeclaration
+                 return p
+          <?> "program"
+-}
+
+{-
+externalDeclaration :: Parser Expr
+externalDeclaration = declaration
+                      <|> functionDefinition
+                      <?> "external declaration"
+
+declaration :: Parser Expr
+declaration = do _ <- string "int"
+                 l <- declaratorList
+                 _ <- string ";"
+                 return l
+              <?> "declaration"
+
+declaratorList :: Parser Expr
+declaratorList = declarator
+                 <|> do l <- declaratorList
+                        _ <- string ","
+                        d <- declarator
+                        return d
+                <?> "declarator list"
+
+declarator :: Parser Expr
+declarator = identifier
+             <?> "declarator"
+
+functionDefinition :: Parser Expr
+functionDefinition = do _ <- string "int"
+                        d <- declarator
+                        p <- between (symbol "(") (symbol ")") parameterTypeList
+                        c <- compoundStatement
+                        return c
+                     <?> "function definition"
+
+parameterTypeList :: Parser Expr
+parameterTypeList = parameterDeclaration
+                    <|> do l <- parameterTypeList
+                           _ <- string ","
+                           d <- parameterDeclaration
+                           return d
+                    <?> "parameter type list"
+
+parameterDeclaration :: Parser Expr
+parameterDeclaration = do _ <- string "int"
+                          d <- declarator
+                          return d
+                       <?> "parameter declaration"
+
+statement :: Parser Statement
+statement = do s <- string";"
+               return EmptyStatement
+            <|> do e <- expression
+                   _ <- string ";"
+                   return (Expression e)
+            <|> compoundStatement
+            <|> do { _ <- string "if";
+                     e <- between (symbol "(") (symbol ")") expression;
+                     s1 <- statement;
+                     do { _ <- string "else";
+                          s2 <- statement;
+                          return (If e s1 s2);
+                          }
+                     <|> return (If e s1 EmptyStatement);
+                   }
+            <|> do _ <- string "while"
+                   e <- between (symbol "(") (symbol ")") expression
+                   s <- statement
+                   return s
+            <|> do _ <- string "return"
+                   e <- expression
+                   _ <- string ";"
+                   return e
+            <?> "statement"
+
+compoundStatement :: Parser CompoundStatement
+compoundStatement = do _ <- string "{"
+                       d <- declarationList
+                       s <- statementList
+                       _ <- string "}"
+                       return s
+                    <?> "compound statement"
+
+declarationList :: Parser DeclarationList
+declarationList = declaration
+                 <|> do l <- declaratorList
+                        d <- declaration
+                        return d
+                 <?> "declarator list"
+
+statementList :: Parser Statement
+statementList = statement
+                <|> do l <- statementList
+                       s <- statement
+                       return s
+                <?> "statement list"
+
+expression :: Parser Expr
+expression = assignExpr
+             <|> do e <- expression
+                    _ <- string ","
+                    a <- assignExpr
+                    return a
+             <?> "expression"
+
+assignExpr :: Parser Expr
+assignExpr = logicalOrExpr
+             <|> do i <- identifier
+                    _ <- string "="
+                    a <- assignExpr
+                    return a
+             <?> "assign expr"
 
 logicalOrExpr :: Parser Expr
 logicalOrExpr = buildExpressionParser operator unaryExpr <?> "expression"
@@ -61,7 +201,7 @@ operator = [[op "*" Mul AssocLeft, op "/" Div AssocLeft]
 
 unaryExpr :: Parser Expr
 unaryExpr = postfixExpr
-            <|> do _ <- char '-'
+            <|> do _ <- string '-'
                    p <- unaryExpr
                    -- minus p
                    return p
@@ -69,36 +209,40 @@ unaryExpr = postfixExpr
 
 postfixExpr :: Parser Expr
 postfixExpr = primaryExpr
-{-
               <|> do name <- identifier
-                     arg <- between (symbol "(") (symbol ")") argumentExprList
-                     -- function call
+                     arg <- between "(" ")" argumentExprList
                      return arg
--}
               <?> "postfix expression"
 
 primaryExpr :: Parser Expr
-primaryExpr = -- identifier
-              constant
-              -- <|> do between (symbol "(") (symbol ")") expression
+primaryExpr = identifier
+              <|> constant
+              <|> between "(" ")" expression
               <?> "primary expression"
 
-{-
-identifier :: Parser Identifier
-identifier = do name <- parserIdentifier
-                return name
--}
+argumentExprList :: Parser Expr
+argumentExprList = assignExpr
+                   <|> do l <- argumentExprList
+                          a <- assignExpr
+                          return a
+                   <?> "argument expression list"
 
-constant :: Parser Expr
+identifier :: Parser Expr
+identifier = do name <- parserIdentifier
+                return (Identifier name)
+             <?> "identifier"
+
+constant :: Parser Constant
 constant = do num <- natural
               return (Const num)
            <?> "constant"
+-}
 
 run :: String -> String
-run input = case parse logicalOrExpr "Test" input of
+run input = case parse program "Test" input of
             Left  err -> show err
             Right val -> show val
 
 main :: IO ()
 main = do
-  putStrLn (run "32 + 443 * 5030   / 123 + 99    - 043")
+  putStrLn (run "string")
