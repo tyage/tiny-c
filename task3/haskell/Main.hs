@@ -4,29 +4,31 @@ import qualified Text.ParserCombinators.Parsec.Token as P
 import Text.ParserCombinators.Parsec.Language
 import Control.Applicative ((<$>))
 import Control.Monad
+import Debug.Trace
+import Text.Parsec.Language (javaStyle)
 
 -- TODO: move to another file
-data Program = ExDecl ExternalDeclaration
-             | ExDeclList Program ExternalDeclaration
-
-instance Show Program where
-  show (ExDecl externalDeclaration) = show externalDeclaration
-  show (ExDeclList program externalDeclaration) = show program ++ "\n" ++ show externalDeclaration
+data Program = ExDeclList [ExternalDeclaration]
+             deriving (Show)
 
 data ExternalDeclaration = Decl Declaration
                          | FuncDef FunctionDefinition
+                         deriving (Show)
 
-instance Show ExternalDeclaration where
-  show (Decl declaration) = show declaration
-  show (FuncDef functionDefinition) = show functionDefinition
+data Declaration = DecList DeclaratorList
+                 deriving (Show)
 
-data Declaration = Hoge String
-instance Show Declaration where
-  show (Hoge s) = show s
+data DeclaratorList = DecTokenList [Declarator]
+                    deriving (Show)
+
+data Declarator = DecIdentifier Identifier
+                deriving (Show)
 
 data FunctionDefinition = Fuga String
-instance Show FunctionDefinition where
-  show (Fuga s) = show s
+                        deriving (Show)
+
+data Identifier = Identifier String
+                deriving (Show)
 
 {-
 data Statement = EmptyStatement
@@ -71,15 +73,15 @@ instance Show Expr where
   show (Or e1 e2) = showExpr "||" e1 e2
 -}
 
-lexer  = P.makeTokenParser(emptyDef)
+lexer  = P.makeTokenParser javaStyle
 natural = P.natural lexer
 reservedOp = P.reservedOp lexer
 parserIdentifier = P.identifier lexer
 symbol = P.symbol lexer
+whiteSpace = P.whiteSpace lexer
 
 program :: Parser Program
-program = ExDecl <$> externalDeclaration
-          <|> liftM2 ExDeclList program externalDeclaration
+program = ExDeclList <$> externalDeclaration `sepBy` whiteSpace
           <?> "program"
 
 externalDeclaration :: Parser ExternalDeclaration
@@ -88,22 +90,30 @@ externalDeclaration = Decl <$> declaration
                       <?> "external declaration"
 
 declaration :: Parser Declaration
-declaration = do h <- string "hoge"
-                 return (Hoge h)
+declaration = do string "int"
+                 whiteSpace
+                 d <- declaratorList
+                 string ";"
+                 return (DecList d)
+              <?> "declaration"
 
 functionDefinition :: Parser FunctionDefinition
-functionDefinition = do h <- string "hoge"
+functionDefinition = do h <- string "fuga"
                         return (Fuga h)
 
-{-
-declaratorList :: Parser Expr
-declaratorList = declarator
-                 <|> do l <- declaratorList
-                        _ <- string ","
-                        d <- declarator
-                        return d
-                <?> "declarator list"
+declaratorList :: Parser DeclaratorList
+declaratorList = DecTokenList <$> declarator `sepBy` (symbol ",")
+                 <?> "declarator list"
 
+declarator :: Parser Declarator
+declarator = DecIdentifier <$> identifier
+             <?> "declarator"
+
+identifier :: Parser Identifier
+identifier = Identifier <$> parserIdentifier
+             <?> "identifier"
+
+{-
 declarator :: Parser Expr
 declarator = identifier
              <?> "declarator"
@@ -258,4 +268,4 @@ run input = case parse program "Test" input of
 
 main :: IO ()
 main = do
-  putStrLn (run "hoge")
+  putStrLn (run "int foo;int hoge;")
