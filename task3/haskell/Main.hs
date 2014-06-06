@@ -202,11 +202,11 @@ expression = ExprList <$> assignExpr `sepBy` comma
              <?> "expression"
 
 assignExpr :: Parser Expr
-assignExpr = logicalOrExpr
-             <|> do i <- identifier
-                    symbol "="
-                    a <- assignExpr
-                    return (Assign i a)
+assignExpr = try (do i <- identifier
+                     symbol "="
+                     a <- assignExpr
+                     return (Assign i a))
+             <|> logicalOrExpr
              <?> "assign expr"
 
 logicalOrExpr :: Parser Expr
@@ -266,4 +266,4 @@ run input = case parse program "Test" input of
 
 main :: IO ()
 main = do
-  putStrLn (run "int foo; int hoge(int a,int b){int a;if(2){}};")
+  putStrLn (run "int foo; int hoge(int a,int b){int a;a = 1;if (a == 2) {a = 3;}};")
