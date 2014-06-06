@@ -15,17 +15,26 @@ data ExternalDeclaration = Decl Declaration
                          | FuncDef FunctionDefinition
                          deriving (Show)
 
-data Declaration = DecList DeclaratorList
+data Declaration = Declaration DeclaratorList
                  deriving (Show)
 
-data DeclaratorList = DecTokenList [Declarator]
+data DeclaratorList = DeclaratorList [Declarator]
                     deriving (Show)
 
-data Declarator = DecIdentifier Identifier
+data Declarator = Declarator Identifier
                 deriving (Show)
 
-data FunctionDefinition = Fuga String
+data FunctionDefinition = FunctionDefinition Declarator ParameterTypeList CompoundStatement
                         deriving (Show)
+
+data ParameterTypeList = ParameterTypeList [ParameterDeclaration]
+                       deriving (Show)
+
+data ParameterDeclaration = ParameterDeclaration Declarator
+                          deriving (Show)
+
+data CompoundStatement = CompoundStatement String
+                       deriving (Show)
 
 data Identifier = Identifier String
                 deriving (Show)
@@ -85,7 +94,7 @@ program = ExDeclList <$> externalDeclaration `sepBy` whiteSpace
           <?> "program"
 
 externalDeclaration :: Parser ExternalDeclaration
-externalDeclaration = Decl <$> declaration
+externalDeclaration = try (Decl <$> declaration)
                       <|> FuncDef <$> functionDefinition
                       <?> "external declaration"
 
@@ -94,34 +103,46 @@ declaration = do string "int"
                  whiteSpace
                  d <- declaratorList
                  string ";"
-                 return (DecList d)
+                 return (Declaration d)
               <?> "declaration"
 
-functionDefinition :: Parser FunctionDefinition
-functionDefinition = do h <- string "fuga"
-                        return (Fuga h)
-
 declaratorList :: Parser DeclaratorList
-declaratorList = DecTokenList <$> declarator `sepBy` (symbol ",")
+declaratorList = DeclaratorList <$> declarator `sepBy` (symbol ",")
                  <?> "declarator list"
 
 declarator :: Parser Declarator
-declarator = DecIdentifier <$> identifier
+declarator = Declarator <$> identifier
              <?> "declarator"
+
+functionDefinition :: Parser FunctionDefinition
+functionDefinition = do string "int"
+                        whiteSpace
+                        d <- declarator
+                        p <- between (symbol "(") (symbol ")") parameterTypeList
+                        c <- compoundStatement
+                        return (FunctionDefinition d p c)
+                     <?> "function definition"
+
+parameterTypeList :: Parser ParameterTypeList
+parameterTypeList = ParameterTypeList <$> parameterDeclaration `sepBy` (symbol ",")
+                    <?> "parameter type list"
+
+parameterDeclaration :: Parser ParameterDeclaration
+parameterDeclaration = do string "int"
+                          whiteSpace
+                          d <- declarator
+                          return (ParameterDeclaration d)
+                       <?> "parameter declaration"
+
+compoundStatement :: Parser CompoundStatement
+compoundStatement = CompoundStatement <$> string "{}"
+                    <?> "compound statement"
 
 identifier :: Parser Identifier
 identifier = Identifier <$> parserIdentifier
              <?> "identifier"
 
 {-
-functionDefinition :: Parser Expr
-functionDefinition = do _ <- string "int"
-                        d <- declarator
-                        p <- between (symbol "(") (symbol ")") parameterTypeList
-                        c <- compoundStatement
-                        return c
-                     <?> "function definition"
-
 parameterTypeList :: Parser Expr
 parameterTypeList = parameterDeclaration
                     <|> do l <- parameterTypeList
@@ -259,4 +280,4 @@ run input = case parse program "Test" input of
 
 main :: IO ()
 main = do
-  putStrLn (run "int foo;int hoge;")
+  putStrLn (run "int foo; int hoge(int a,int b){};")
