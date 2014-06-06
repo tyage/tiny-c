@@ -72,23 +72,3 @@ data Identifier = Identifier String
 
 data Constant = Constant Integer
               deriving (Show)
-
-{-
-showExpr :: String -> Expr -> Expr -> String
-showExpr s e1 e2 = "(" ++ s ++ " " ++ show e1 ++ " " ++ show e2 ++ ")"
-
-instance Show Expr where
-  show (Const i) = show i
-  show (Mul e1 e2) = showExpr "*" e1 e2
-  show (Div e1 e2) = showExpr "/" e1 e2
-  show (Plus e1 e2) = showExpr "+" e1 e2
-  show (Minus e1 e2) = showExpr "-" e1 e2
-  show (Lt e1 e2) = showExpr "<" e1 e2
-  show (Gt e1 e2) = showExpr ">" e1 e2
-  show (Le e1 e2) = showExpr "<=" e1 e2
-  show (Ge e1 e2) = showExpr ">=" e1 e2
-  show (Equal e1 e2) = showExpr "==" e1 e2
-  show (NotEqual e1 e2) = showExpr "!=" e1 e2
-  show (And e1 e2) = showExpr "&&" e1 e2
-  show (Or e1 e2) = showExpr "||" e1 e2
--}
