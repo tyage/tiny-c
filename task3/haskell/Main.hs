@@ -97,9 +97,11 @@ instance Show Expr where
 lexer  = P.makeTokenParser javaStyle
 natural = P.natural lexer
 reservedOp = P.reservedOp lexer
+reserved = P.reserved lexer
 parserIdentifier = P.identifier lexer
 symbol = P.symbol lexer
 whiteSpace = P.whiteSpace lexer
+semi = P.semi lexer
 
 program :: Parser Program
 program = ExDeclList <$> externalDeclaration `sepBy` whiteSpace
@@ -111,10 +113,10 @@ externalDeclaration = try (Decl <$> declaration)
                       <?> "external declaration"
 
 declaration :: Parser Declaration
-declaration = do string "int"
+declaration = do reserved "int"
                  whiteSpace
                  d <- declaratorList
-                 string ";"
+                 semi
                  return (Declaration d)
               <?> "declaration"
 
@@ -127,7 +129,7 @@ declarator = Declarator <$> identifier
              <?> "declarator"
 
 functionDefinition :: Parser FunctionDefinition
-functionDefinition = do string "int"
+functionDefinition = do reserved "int"
                         whiteSpace
                         d <- declarator
                         p <- between (symbol "(") (symbol ")") parameterTypeList
@@ -140,65 +142,55 @@ parameterTypeList = ParameterTypeList <$> parameterDeclaration `sepBy` (symbol "
                     <?> "parameter type list"
 
 parameterDeclaration :: Parser ParameterDeclaration
-parameterDeclaration = do string "int"
+parameterDeclaration = do reserved "int"
                           whiteSpace
                           d <- declarator
                           return (ParameterDeclaration d)
                        <?> "parameter declaration"
 
 statement :: Parser Statement
-statement = try (do string ";"
+statement = try (do semi
                     return EmptyStatement)
             <|> try (do e <- expression
-                        string ";"
+                        semi
                         return (ExpressionStmt e))
             <|> try (CompoundStmt <$> compoundStatement)
-            <|> try (do { string "if";
+            <|> try (do { reserved "if";
                           e <- between (symbol "(") (symbol ")") expression;
                           s1 <- statement;
-                          do { string "else";
+                          do { reserved "else";
                                s2 <- statement;
                                return (If e s1 s2);
                                }
                           <|> return (If e s1 EmptyStatement);
                         })
-            <|> try (do string "while"
+            <|> try (do reserved "while"
                         e <- between (symbol "(") (symbol ")") expression
                         s <- statement
                         return (While e s))
-            <|> try (do string "return"
-                        e <- expression
-                        string ";"
-                        return (Return e))
+            <|> do reserved "return"
+                   whiteSpace
+                   e <- expression
+                   semi
+                   return (Return e)
             <?> "statement"
 
 compoundStatement :: Parser CompoundStatement
-compoundStatement = try (do string "{"
-                            d <- declarationList
-                            s <- statementList
-                            string "}"
-                            return (CompoundStatement d s))
-                    <|> try (do string "{"
-                                d <- declarationList
-                                string "}"
-                                return (CompoundStatement d (StatementList [EmptyStatement])))
-                    <|> try (do string "{"
-                                s <- statementList
-                                string "}"
-                                return (CompoundStatement (DeclarationList [EmptyDeclaration]) s))
-                    <|> try (do string "{"
-                                whiteSpace
-                                string "}"
-                                return (CompoundStatement
-                                  (DeclarationList [EmptyDeclaration]) (StatementList [EmptyStatement])))
+compoundStatement = do symbol "{"
+                       d <- declarationList
+                       s <- statementList
+                       symbol "}"
+                       return (CompoundStatement d s)
                     <?> "compound statement"
 
 declarationList :: Parser DeclarationList
-declarationList = DeclarationList <$> many declaration
+declarationList = try (DeclarationList <$> many declaration)
+                  <|> (whiteSpace >> return (DeclarationList [EmptyDeclaration]))
                   <?> "declaration list"
 
 statementList :: Parser StatementList
-statementList = StatementList <$> many statement
+statementList = try (StatementList <$> many statement)
+                <|> (whiteSpace >> return (StatementList [EmptyStatement]))
                 <?> "statement list"
 
 expression :: Parser Expression
@@ -285,4 +277,4 @@ run input = case parse program "Test" input of
 
 main :: IO ()
 main = do
-  putStrLn (run "int foo; int hoge(int a,int b){if(2){}};")
+  putStrLn (run "int foo; int hoge(int a,int b){int a;if(2){}};")
