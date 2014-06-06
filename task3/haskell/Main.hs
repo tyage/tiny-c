@@ -16,6 +16,7 @@ data ExternalDeclaration = Decl Declaration
                          deriving (Show)
 
 data Declaration = Declaration DeclaratorList
+                 | EmptyDeclaration
                  deriving (Show)
 
 data DeclaratorList = DeclaratorList [Declarator]
@@ -33,19 +34,30 @@ data ParameterTypeList = ParameterTypeList [ParameterDeclaration]
 data ParameterDeclaration = ParameterDeclaration Declarator
                           deriving (Show)
 
-data CompoundStatement = CompoundStatement String
+data Statement = EmptyStatement
+               | ExpressionStmt Expression
+               | CompoundStmt CompoundStatement
+               | If Expression Statement Statement
+               | While Expression Statement
+               | Return Expression
+               deriving (Show)
+
+data CompoundStatement = CompoundStatement DeclarationList StatementList
                        deriving (Show)
+
+data DeclarationList = DeclarationList [Declaration]
+                     deriving (Show)
+
+data StatementList = StatementList [Statement]
+                   deriving (Show)
+
+data Expression = Const Integer
+                deriving (Show)
 
 data Identifier = Identifier String
                 deriving (Show)
 
 {-
-data Statement = EmptyStatement
-               | Expression Expr
-               | If Expr Statement Statement
-               | While Expr Statement
-               | Return Expr
-
 data Expr = Const Integer
           | Identifier String
           | Mul Expr Expr
@@ -134,77 +146,70 @@ parameterDeclaration = do string "int"
                           return (ParameterDeclaration d)
                        <?> "parameter declaration"
 
+statement :: Parser Statement
+statement = try (do string ";"
+                    return EmptyStatement)
+            <|> try (do e <- expression
+                        string ";"
+                        return (ExpressionStmt e))
+            <|> try (CompoundStmt <$> compoundStatement)
+            <|> try (do { string "if";
+                          e <- between (symbol "(") (symbol ")") expression;
+                          s1 <- statement;
+                          do { string "else";
+                               s2 <- statement;
+                               return (If e s1 s2);
+                               }
+                          <|> return (If e s1 EmptyStatement);
+                        })
+            <|> try (do string "while"
+                        e <- between (symbol "(") (symbol ")") expression
+                        s <- statement
+                        return (While e s))
+            <|> try (do string "return"
+                        e <- expression
+                        string ";"
+                        return (Return e))
+            <?> "statement"
+
 compoundStatement :: Parser CompoundStatement
-compoundStatement = CompoundStatement <$> string "{}"
+compoundStatement = try (do string "{"
+                            d <- declarationList
+                            s <- statementList
+                            string "}"
+                            return (CompoundStatement d s))
+                    <|> try (do string "{"
+                                d <- declarationList
+                                string "}"
+                                return (CompoundStatement d (StatementList [EmptyStatement])))
+                    <|> try (do string "{"
+                                s <- statementList
+                                string "}"
+                                return (CompoundStatement (DeclarationList [EmptyDeclaration]) s))
+                    <|> try (do string "{"
+                                whiteSpace
+                                string "}"
+                                return (CompoundStatement
+                                  (DeclarationList [EmptyDeclaration]) (StatementList [EmptyStatement])))
                     <?> "compound statement"
+
+declarationList :: Parser DeclarationList
+declarationList = DeclarationList <$> many declaration
+                  <?> "declaration list"
+
+statementList :: Parser StatementList
+statementList = StatementList <$> many statement
+                <?> "statement list"
+
+expression :: Parser Expression
+expression = Const <$> natural
+             <?> "expression"
 
 identifier :: Parser Identifier
 identifier = Identifier <$> parserIdentifier
              <?> "identifier"
 
 {-
-parameterTypeList :: Parser Expr
-parameterTypeList = parameterDeclaration
-                    <|> do l <- parameterTypeList
-                           _ <- string ","
-                           d <- parameterDeclaration
-                           return d
-                    <?> "parameter type list"
-
-parameterDeclaration :: Parser Expr
-parameterDeclaration = do _ <- string "int"
-                          d <- declarator
-                          return d
-                       <?> "parameter declaration"
-
-statement :: Parser Statement
-statement = do s <- string";"
-               return EmptyStatement
-            <|> do e <- expression
-                   _ <- string ";"
-                   return (Expression e)
-            <|> compoundStatement
-            <|> do { _ <- string "if";
-                     e <- between (symbol "(") (symbol ")") expression;
-                     s1 <- statement;
-                     do { _ <- string "else";
-                          s2 <- statement;
-                          return (If e s1 s2);
-                          }
-                     <|> return (If e s1 EmptyStatement);
-                   }
-            <|> do _ <- string "while"
-                   e <- between (symbol "(") (symbol ")") expression
-                   s <- statement
-                   return s
-            <|> do _ <- string "return"
-                   e <- expression
-                   _ <- string ";"
-                   return e
-            <?> "statement"
-
-compoundStatement :: Parser CompoundStatement
-compoundStatement = do _ <- string "{"
-                       d <- declarationList
-                       s <- statementList
-                       _ <- string "}"
-                       return s
-                    <?> "compound statement"
-
-declarationList :: Parser DeclarationList
-declarationList = declaration
-                 <|> do l <- declaratorList
-                        d <- declaration
-                        return d
-                 <?> "declarator list"
-
-statementList :: Parser Statement
-statementList = statement
-                <|> do l <- statementList
-                       s <- statement
-                       return s
-                <?> "statement list"
-
 expression :: Parser Expr
 expression = assignExpr
              <|> do e <- expression
@@ -280,4 +285,4 @@ run input = case parse program "Test" input of
 
 main :: IO ()
 main = do
-  putStrLn (run "int foo; int hoge(int a,int b){};")
+  putStrLn (run "int foo; int hoge(int a,int b){if(2){}};")
