@@ -5,6 +5,7 @@ import Text.ParserCombinators.Parsec
 
 import AST
 import Parser
+import Show
 
 run :: String -> String
 run input = case parse program "TinyC" input of

@@ -1,30 +1,22 @@
 module AST where
 
 data Program = ExDeclList [ExternalDeclaration]
-             deriving (Show)
 
 data ExternalDeclaration = Decl Declaration
                          | FuncDef FunctionDefinition
-                         deriving (Show)
 
 data Declaration = Declaration DeclaratorList
                  | EmptyDeclaration
-                 deriving (Show)
 
 data DeclaratorList = DeclaratorList [Declarator]
-                    deriving (Show)
 
 data Declarator = Declarator Identifier
-                deriving (Show)
 
 data FunctionDefinition = FunctionDefinition Declarator ParameterTypeList CompoundStatement
-                        deriving (Show)
 
 data ParameterTypeList = ParameterTypeList [ParameterDeclaration]
-                       deriving (Show)
 
 data ParameterDeclaration = ParameterDeclaration Declarator
-                          deriving (Show)
 
 data Statement = EmptyStatement
                | ExpressionStmt Expr
@@ -32,16 +24,12 @@ data Statement = EmptyStatement
                | If Expr Statement Statement
                | While Expr Statement
                | Return Expr
-               deriving (Show)
 
 data CompoundStatement = CompoundStatement DeclarationList StatementList
-                       deriving (Show)
 
 data DeclarationList = DeclarationList [Declaration]
-                     deriving (Show)
 
 data StatementList = StatementList [Statement]
-                   deriving (Show)
 
 data Expr = ExprList [Expr]
           | Assign Identifier Expr
@@ -62,13 +50,9 @@ data Expr = ExprList [Expr]
           | Ident Identifier
           | Const Constant
           | Parens Expr
-          deriving (Show)
 
 data ArgumentExprList = ArgumentExprList [Expr]
-                      deriving (Show)
 
 data Identifier = Identifier String
-                deriving (Show)
 
 data Constant = Constant Integer
-              deriving (Show)
