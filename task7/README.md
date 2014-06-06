@@ -20,3 +20,62 @@ main:
       print_program($2); }
   ;
 ```
+
+## 実行例:
+
+```sh
+% cat test.c
+int x;
+int f(int x, int y)
+{
+  int x;
+  {
+    int x, y;
+    x+y;
+    {
+      int x, z;
+      x+y+z;
+    }
+  }
+  {
+    int w;
+    x+y+w;
+  }
+  x+y;
+}
+int g(int y)
+{
+  int z;
+  f(x, y);
+  g(z);
+}
+% ./tcc < test.c
+4: warning: declaration of ‘x’ shadows a parameter
+6: warning: declaration of ‘y’ shadows a parameter
+(int x:0)
+((int f:0) ((int x:1:8)(int y:1:12))
+(
+  (int x:2:-4)
+  (
+    (int x:3:-8 y:3:-12)
+    (+ x:3 y:3)
+    (
+      (int x:4:-16 z:4:-20)
+      (+ (+ x:4 y:3) z:4)
+    )
+  )
+  (
+    (int w:3:-8)
+    (+ (+ x:2 y:1) w:3)
+  )
+  (+ x:2 y:1)
+))
+((int g:0) ((int y:1:8))
+(
+  (int z:2:-4)
+  (FCALL f:0 x:0 y:1)
+  (FCALL g:0 z:2)
+))
+```
+
+[注意] 課題 6 と同様，インデントや改行などの工夫は必須ではない．
