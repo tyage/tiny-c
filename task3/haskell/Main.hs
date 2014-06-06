@@ -35,11 +35,11 @@ data ParameterDeclaration = ParameterDeclaration Declarator
                           deriving (Show)
 
 data Statement = EmptyStatement
-               | ExpressionStmt Expression
+               | ExpressionStmt Expr
                | CompoundStmt CompoundStatement
-               | If Expression Statement Statement
-               | While Expression Statement
-               | Return Expression
+               | If Expr Statement Statement
+               | While Expr Statement
+               | Return Expr
                deriving (Show)
 
 data CompoundStatement = CompoundStatement DeclarationList StatementList
@@ -51,30 +51,36 @@ data DeclarationList = DeclarationList [Declaration]
 data StatementList = StatementList [Statement]
                    deriving (Show)
 
-data Expression = Const Integer
-                deriving (Show)
-
-data Identifier = Identifier String
-                deriving (Show)
-
-{-
-data Expr = Const Integer
-          | Identifier String
-          | Mul Expr Expr
-          | Div Expr Expr
-          | Plus Expr Expr
-          | Minus Expr Expr
+data Expr = ExprList [Expr]
+          | Assign Identifier Expr
+          | Or Expr Expr
+          | And Expr Expr
+          | Equal Expr Expr
+          | NotEqual Expr Expr
           | Lt Expr Expr
           | Gt Expr Expr
           | Le Expr Expr
           | Ge Expr Expr
-          | Equal Expr Expr
-          | NotEqual Expr Expr
-          | And Expr Expr
-          | Or Expr Expr
+          | Plus Expr Expr
+          | Minus Expr Expr
+          | Multiple Expr Expr
+          | Divide Expr Expr
+          | UnaryMinus Expr
+          | FunctionCall Identifier ArgumentExprList
+          | Ident Identifier
+          | Const Constant
+          | Parens Expr
+          deriving (Show)
+
+data ArgumentExprList = ArgumentExprList [Expr]
+                      deriving (Show)
+
+data Identifier = Identifier String
+                deriving (Show)
 
 data Constant = Constant Integer
-
+              deriving (Show)
+{-
 showExpr :: String -> Expr -> Expr -> String
 showExpr s e1 e2 = "(" ++ s ++ " " ++ show e1 ++ " " ++ show e2 ++ ")"
 
@@ -103,6 +109,7 @@ symbol = P.symbol lexer
 whiteSpace = P.whiteSpace lexer
 semi = P.semi lexer
 parens = P.parens lexer
+comma = P.comma lexer
 
 program :: Parser Program
 program = ExDeclList <$> externalDeclaration `sepBy` whiteSpace
@@ -121,7 +128,7 @@ declaration = do reserved "int"
               <?> "declaration"
 
 declaratorList :: Parser DeclaratorList
-declaratorList = DeclaratorList <$> declarator `sepBy` (symbol ",")
+declaratorList = DeclaratorList <$> declarator `sepBy` comma
                  <?> "declarator list"
 
 declarator :: Parser Declarator
@@ -137,7 +144,7 @@ functionDefinition = do reserved "int"
                      <?> "function definition"
 
 parameterTypeList :: Parser ParameterTypeList
-parameterTypeList = ParameterTypeList <$> parameterDeclaration `sepBy` (symbol ",")
+parameterTypeList = ParameterTypeList <$> parameterDeclaration `sepBy` comma
                     <?> "parameter type list"
 
 parameterDeclaration :: Parser ParameterDeclaration
@@ -190,35 +197,22 @@ statementList = try (StatementList <$> many statement)
                 <|> (whiteSpace >> return (StatementList [EmptyStatement]))
                 <?> "statement list"
 
-expression :: Parser Expression
-expression = Const <$> natural
-             <?> "expression"
-
-identifier :: Parser Identifier
-identifier = Identifier <$> parserIdentifier
-             <?> "identifier"
-
-{-
 expression :: Parser Expr
-expression = assignExpr
-             <|> do e <- expression
-                    _ <- string ","
-                    a <- assignExpr
-                    return a
+expression = ExprList <$> assignExpr `sepBy` comma
              <?> "expression"
 
 assignExpr :: Parser Expr
 assignExpr = logicalOrExpr
              <|> do i <- identifier
-                    _ <- string "="
+                    symbol "="
                     a <- assignExpr
-                    return a
+                    return (Assign i a)
              <?> "assign expr"
 
 logicalOrExpr :: Parser Expr
 logicalOrExpr = buildExpressionParser operator unaryExpr <?> "expression"
 
-operator = [[op "*" Mul AssocLeft, op "/" Div AssocLeft]
+operator = [[op "*" Multiple AssocLeft, op "/" Divide AssocLeft]
            ,[op "+" Plus AssocLeft, op "-" Minus AssocLeft]
            ,[op "<" Lt AssocLeft, op ">" Gt AssocLeft,
              op "<=" Le AssocLeft, op ">=" Ge AssocLeft]
@@ -235,37 +229,35 @@ operator = [[op "*" Mul AssocLeft, op "/" Div AssocLeft]
 
 unaryExpr :: Parser Expr
 unaryExpr = postfixExpr
-            <|> do _ <- string '-'
+            <|> do symbol "-"
                    p <- unaryExpr
-                   -- minus p
-                   return p
+                   return (UnaryMinus p)
             <?> "unary expression"
 
 postfixExpr :: Parser Expr
 postfixExpr = primaryExpr
-              <|> do name <- identifier
-                     arg <- between "(" ")" argumentExprList
-                     return arg
+              <|> do i <- identifier
+                     a <- parens argumentExprList
+                     return (FunctionCall i a)
               <?> "postfix expression"
 
 primaryExpr :: Parser Expr
-primaryExpr = identifier
-              <|> constant
-              <|> between "(" ")" expression
+primaryExpr = Ident <$> identifier
+              <|> Const <$> constant
+              <|> Parens <$> parens expression
               <?> "primary expression"
 
-argumentExprList :: Parser Expr
-argumentExprList = assignExpr
-                   <|> do l <- argumentExprList
-                          a <- assignExpr
-                          return a
+argumentExprList :: Parser ArgumentExprList
+argumentExprList = ArgumentExprList <$> assignExpr `sepBy` comma
                    <?> "argument expression list"
 
+identifier :: Parser Identifier
+identifier = Identifier <$> parserIdentifier
+             <?> "identifier"
+
 constant :: Parser Constant
-constant = do num <- natural
-              return (Const num)
+constant = Constant <$> natural
            <?> "constant"
--}
 
 run :: String -> String
 run input = case parse program "Test" input of
