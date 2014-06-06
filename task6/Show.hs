@@ -20,7 +20,7 @@ instance Show Declarator where
   show (Declarator i) = show i
 
 instance Show FunctionDefinition where
-  show (FunctionDefinition d p c) = "((int " ++ show d ++ ") (" ++ show p ++ "))\n" ++ show c
+  show (FunctionDefinition d p c) = "((int " ++ show d ++ ") (" ++ show p ++ ")\n" ++ show c ++ ")"
 
 instance Show ParameterTypeList where
   show (ParameterTypeList p) = unwords . map (\s -> "(" ++ show s ++ ")") $ p
@@ -37,13 +37,13 @@ instance Show Statement where
   show (Return e) = "(return " ++ show e ++ ")"
 
 instance Show CompoundStatement where
-  show (CompoundStatement d s) = show s ++ show d
+  show (CompoundStatement d s) = show d ++ show s
 
 instance Show DeclarationList where
   show (DeclarationList d) = unwords . map show $ d
 
 instance Show StatementList where
-  show (StatementList s) = unwords . map show $ s
+  show (StatementList s) = unlines . map show $ s
 
 showExpr :: String -> Expr -> Expr -> String
 showExpr s e1 e2 = "(" ++ s ++ " " ++ show e1 ++ " " ++ show e2 ++ ")"
