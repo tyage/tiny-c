@@ -32,9 +32,9 @@ instance Show Statement where
   show (EmptyStatement) = ""
   show (ExpressionStmt e) = "(" ++ show e ++ ")"
   show (CompoundStmt c) = "(" ++ show c ++ ")"
-  show (If e s1 s2) = "(if " ++ show e ++ " " ++ show s1 ++ " " ++ show s2 ++ ")"
-  show (While e s) = "(while " ++ show e ++ " " ++ show s ++ ")"
-  show (Return e) = "(return " ++ show e ++ ")"
+  show (If e s1 s2) = "(if " ++ show e ++ "\n" ++ show s1 ++ show s2 ++ ")\n"
+  show (While e s) = "(while " ++ show e ++ " " ++ show s ++ ")\n"
+  show (Return e) = "(return " ++ show e ++ ")\n"
 
 instance Show CompoundStatement where
   show (CompoundStatement d s) = show d ++ show s
@@ -43,7 +43,7 @@ instance Show DeclarationList where
   show (DeclarationList d) = unwords . map show $ d
 
 instance Show StatementList where
-  show (StatementList s) = unlines . map show $ s
+  show (StatementList s) = unwords . map show $ s
 
 showExpr :: String -> Expr -> Expr -> String
 showExpr s e1 e2 = "(" ++ s ++ " " ++ show e1 ++ " " ++ show e2 ++ ")"
@@ -64,7 +64,7 @@ instance Show Expr where
   show (Multiple e1 e2) = showExpr "*" e1 e2
   show (Divide e1 e2) = showExpr "/" e1 e2
   show (UnaryMinus e) = "(- " ++ show e ++ ")"
-  show (FunctionCall i a) = "(FCALL " ++ show i ++ " " ++ show a ++ ")"
+  show (FunctionCall i a) = "(call " ++ show i ++ " " ++ show a ++ ")"
   show (Ident i) = show i
   show (Const c) = show c
   show (Parens e) = "(" ++ show e ++ ")"
