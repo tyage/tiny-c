@@ -102,6 +102,7 @@ parserIdentifier = P.identifier lexer
 symbol = P.symbol lexer
 whiteSpace = P.whiteSpace lexer
 semi = P.semi lexer
+parens = P.parens lexer
 
 program :: Parser Program
 program = ExDeclList <$> externalDeclaration `sepBy` whiteSpace
@@ -132,7 +133,7 @@ functionDefinition :: Parser FunctionDefinition
 functionDefinition = do reserved "int"
                         whiteSpace
                         d <- declarator
-                        p <- between (symbol "(") (symbol ")") parameterTypeList
+                        p <- parens parameterTypeList
                         c <- compoundStatement
                         return (FunctionDefinition d p c)
                      <?> "function definition"
@@ -156,7 +157,7 @@ statement = try (do semi
                         return (ExpressionStmt e))
             <|> try (CompoundStmt <$> compoundStatement)
             <|> try (do { reserved "if";
-                          e <- between (symbol "(") (symbol ")") expression;
+                          e <- parens expression;
                           s1 <- statement;
                           do { reserved "else";
                                s2 <- statement;
@@ -165,7 +166,7 @@ statement = try (do semi
                           <|> return (If e s1 EmptyStatement);
                         })
             <|> try (do reserved "while"
-                        e <- between (symbol "(") (symbol ")") expression
+                        e <- parens expression
                         s <- statement
                         return (While e s))
             <|> do reserved "return"
