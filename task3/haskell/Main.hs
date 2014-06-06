@@ -115,7 +115,6 @@ externalDeclaration = try (Decl <$> declaration)
 
 declaration :: Parser Declaration
 declaration = do reserved "int"
-                 whiteSpace
                  d <- declaratorList
                  semi
                  return (Declaration d)
@@ -131,7 +130,6 @@ declarator = Declarator <$> identifier
 
 functionDefinition :: Parser FunctionDefinition
 functionDefinition = do reserved "int"
-                        whiteSpace
                         d <- declarator
                         p <- parens parameterTypeList
                         c <- compoundStatement
@@ -144,7 +142,6 @@ parameterTypeList = ParameterTypeList <$> parameterDeclaration `sepBy` (symbol "
 
 parameterDeclaration :: Parser ParameterDeclaration
 parameterDeclaration = do reserved "int"
-                          whiteSpace
                           d <- declarator
                           return (ParameterDeclaration d)
                        <?> "parameter declaration"
@@ -170,7 +167,6 @@ statement = try (do semi
                         s <- statement
                         return (While e s))
             <|> do reserved "return"
-                   whiteSpace
                    e <- expression
                    semi
                    return (Return e)
