@@ -1,0 +1,43 @@
+\documentclass[a4paper,12pt]{jarticle}
+\usepackage{listings}
+\usepackage{url}
+\title{計算機科学実験及演習3 中間レポート1}
+\author{1029-24-9540 山崎啓太郎}
+\begin{document}
+\lstset{numbers=left,basicstyle=\small}
+\maketitle
+
+\section{課題3}
+\subsection{回答}
+課題3の仕様を持つTiny Cパーサを作成しました。
+
+\subsection{プログラムを置いたディレクトリパス}
+\verb|$HOME/dev/tiny-c/task3/haskell/| にHaskellで作成した場合のソースコードを置いてあります。
+
+以下の説明はHaskellで作成したソースコードの説明になります。
+
+\verb|$HOME/dev/tiny-c/task3/c/| にC言語で作成した場合のソースコードを置いてあります。
+
+(\verb|$HOME = /export/home/012/a0121573|)
+
+\subsection{各プログラムの設計方針}
+
+\begin{description}
+  \item[Main.hs] ファイルを読み込んでパーサにかけます
+  \item[Parser.hs] 課題3の仕様に合わせたTiny Cパーサになります
+  \item[AST.hs] Parser.hsで使用する型に必要となる抽象構文木になります
+\end{description}
+
+\subsection{各部の説明}
+
+\begin{description}
+  \item[Main.hs] パーサを呼び出します
+  \item[Parser.hs] 課題3の仕様に合わせたTiny Cパーサになります
+  \item[AST.hs] 抽象構文木になります
+  \item[test.c] パーサのテスト用Tiny Cのコードです
+\end{description}
+
+\subsection{感想}
+課題3の仕様を一つずつ確認してパーサを構築していく手順に時間がかかりました。
+
+\end{document}
