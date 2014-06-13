@@ -1,6 +1,4 @@
 *.out
 *.hi
 *.o
-*.log
-*.dvi
-*.aux
+reports/
