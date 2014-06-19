@@ -6,11 +6,18 @@ import Text.ParserCombinators.Parsec
 import AST
 import Parser
 import Show
+import Semantic
+import CompileError
 
 run :: String -> String
-run input = case parse program "TinyC" input of
+run input = case parseProgram input >>= semanticCheck of
             Left err -> show err
             Right val -> show val
+
+parseProgram :: String -> Either CompileError Program
+parseProgram input = case parse program "TinyC" input of
+                     Left err -> Left $ ParserError err
+                     Right val -> Right val
 
 main :: IO ()
 main = do
