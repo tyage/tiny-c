@@ -2,11 +2,10 @@ module Semantic where
 
 import Control.Applicative
 import Control.Monad
+import Control.Monad.Writer
 
 import AST
 import CompileError
-
-data IORef globalSymbolTable
 
 semanticCheck :: Program -> ErrorChecker Program
 semanticCheck p = checkProgram p
@@ -44,4 +43,6 @@ checkCompoundStatement :: CompoundStatement -> ErrorChecker CompoundStatement
 checkCompoundStatement = return
 
 checkIdentifier :: Identifier -> ErrorChecker Identifier
-checkIdentifier = return
+checkIdentifier (Identifier s) = do
+  tell [s]
+  return (Identifier s)

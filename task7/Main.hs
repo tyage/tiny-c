@@ -2,6 +2,8 @@ module Main where
 
 import System.Environment
 import Text.ParserCombinators.Parsec
+import Control.Monad.State
+import Control.Monad.Writer
 
 import AST
 import Parser
@@ -10,9 +12,9 @@ import Semantic
 import CompileError
 
 run :: String -> String
-run input = case parseProgram input >>= semanticCheck of
+run input = case parseProgram input of
             Left err -> show err
-            Right val -> show val
+            Right program -> show $ execWriterT $ evalStateT (semanticCheck program) 0
 
 parseProgram :: String -> Either CompileError Program
 parseProgram input = case parse program "TinyC" input of
