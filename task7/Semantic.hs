@@ -6,6 +6,7 @@ import Control.Monad.Writer
 import Control.Monad.State
 
 import Type
+import Show
 
 setCurrentLevel :: Int -> ErrorChecker ()
 setCurrentLevel i = do
@@ -21,6 +22,19 @@ lookupVariableInTable :: Identifier -> VariablesTable -> (Maybe Token)
 lookupVariableInTable i table = case lookup i $ variablesList $ table of
   Nothing -> parentTable table >>= lookupVariableInTable i
   Just t -> Just t
+
+putVariable :: Identifier -> ErrorChecker ()
+putVariable i = do
+  env <- get
+  put $ Environment (putVariableInTable env i) (environmentLevel env)
+
+putVariableInTable :: Environment -> Identifier -> VariablesTable
+putVariableInTable env i = VariablesTable (parentTable currentTable) newVariablesList
+  where
+    newVariablesList = (variablesList currentTable) ++ [(i, newToken)]
+    newToken = VariableToken i currentLevel
+    currentLevel = environmentLevel env
+    currentTable = variablesTable env
 
 semanticCheck :: Program -> ErrorChecker Program
 semanticCheck p = checkProgram p
@@ -43,6 +57,10 @@ checkDeclaratorList (DeclaratorList d) = DeclaratorList <$> mapM checkDeclarator
 
 checkDeclarator :: Declarator -> ErrorChecker Declarator
 checkDeclarator (Declarator i) = do
+  t <- lookupVariable i
+  case t of
+    Nothing -> putVariable i
+    _ -> tell ["redeclaration of " ++ show i]
   Declarator <$> checkIdentifier i
 
 checkFunctionDefinition :: FunctionDefinition -> ErrorChecker FunctionDefinition
