@@ -57,16 +57,25 @@ data Expr = ExprList [Expr]
 data ArgumentExprList = ArgumentExprList [Expr]
 
 data Identifier = Identifier String
-                | VariableIdentifier Token
-                | FunctionIdentifier Token
+                deriving (Eq)
 
-data Token = VariableToken String Int
-           | FunctionToken String Int
-           | ParameterToken String Int
-           | UndefinedFunctionToken String Int
+data Token = VariableToken Identifier Level
+           | FunctionToken Identifier Level
+           | ParameterToken Identifier Level
+           | UndefinedFunctionToken Identifier Level
 
 data Constant = Constant Integer
 
 type ErrorChecker a = StateT Environment (WriterT [String] Maybe) a
-type Environment = GlobalVariables
-type GlobalVariables = [Token]
+
+data Environment = Environment {
+  variablesTable :: VariablesTable,
+  environmentLevel :: Level
+}
+
+data VariablesTable = VariablesTable {
+  parentTable :: (Maybe VariablesTable),
+  variablesList :: [(Identifier, Token)]
+}
+
+type Level = Int
