@@ -9,7 +9,7 @@ import qualified Text.ParserCombinators.Parsec.Token as Token
 import Text.ParserCombinators.Parsec.Language
 import Text.Parsec.Language (javaStyle)
 
-import AST
+import Type
 
 lexer  = Token.makeTokenParser javaStyle
 natural = Token.natural lexer

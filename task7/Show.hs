@@ -1,6 +1,6 @@
 module Show where
 
-import AST
+import Type
 
 instance Show Program where
   show (ExDeclList e) = unlines . map show $ e

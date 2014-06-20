@@ -3,9 +3,9 @@ module Semantic where
 import Control.Applicative
 import Control.Monad
 import Control.Monad.Writer
+import Control.Monad.State
 
-import AST
-import CompileError
+import Type
 
 semanticCheck :: Program -> ErrorChecker Program
 semanticCheck p = checkProgram p

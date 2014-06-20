@@ -1,4 +1,7 @@
-module AST where
+module Type where
+
+import Control.Monad.Writer
+import Control.Monad.State
 
 data Program = ExDeclList [ExternalDeclaration]
 
@@ -54,5 +57,16 @@ data Expr = ExprList [Expr]
 data ArgumentExprList = ArgumentExprList [Expr]
 
 data Identifier = Identifier String
+                | VariableIdentifier Token
+                | FunctionIdentifier Token
+
+data Token = VariableToken String Int
+           | FunctionToken String Int
+           | ParameterToken String Int
+           | UndefinedFunctionToken String Int
 
 data Constant = Constant Integer
+
+type ErrorChecker a = StateT Environment (WriterT [String] Maybe) a
+type Environment = GlobalVariables
+type GlobalVariables = [Token]
