@@ -171,11 +171,18 @@ checkParameterDeclarator (Declarator i) = do
 
 checkStatement :: Statement -> ErrorChecker Statement
 checkStatement EmptyStatement = return EmptyStatement
-checkStatement (ExpressionStmt e) = return $ ExpressionStmt e
-checkStatement (CompoundStmt e) = return $ CompoundStmt e
-checkStatement (If e s1 s2) = return $ If e s1 s2
-checkStatement (While e s) = return $ While e s
-checkStatement (Return e) = return $ Return e
+checkStatement (ExpressionStmt e) = ExpressionStmt <$> checkExpression e
+checkStatement (CompoundStmt e) = CompoundStmt <$> checkCompoundStatement e
+checkStatement (If e s1 s2) = liftM3 If ce cs1 cs2
+  where
+    ce = checkExpression e
+    cs1 = checkStatement s1
+    cs2 = checkStatement s2
+checkStatement (While e s) = liftM2 While ce cs
+  where
+    ce = checkExpression e
+    cs = checkStatement s
+checkStatement (Return e) = Return <$> checkExpression e
 
 checkCompoundStatement :: CompoundStatement -> ErrorChecker CompoundStatement
 checkCompoundStatement (CompoundStatement d s) = do
@@ -192,6 +199,9 @@ checkDeclarationList (DeclarationList d) = DeclarationList <$> mapM checkDeclara
 
 checkStatementList :: StatementList -> ErrorChecker StatementList
 checkStatementList (StatementList d) = return $ StatementList d
+
+checkExpression :: Expr -> ErrorChecker Expr
+checkExpression = return
 
 checkIdentifier :: Identifier -> ErrorChecker Identifier
 checkIdentifier (Identifier s) = do
