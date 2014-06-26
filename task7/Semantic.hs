@@ -11,7 +11,7 @@ import Show
 setCurrentLevel :: Int -> ErrorChecker ()
 setCurrentLevel i = do
   env <- get
-  put $ Environment (variablesTable env) i
+  put $ Environment (variablesTable env) (functionsTable env) i
 
 lookupVariable :: Identifier -> ErrorChecker (Maybe Token)
 lookupVariable i = do
@@ -20,21 +20,50 @@ lookupVariable i = do
 
 lookupVariableInTable :: Identifier -> VariablesTable -> (Maybe Token)
 lookupVariableInTable i table = case lookup i $ variablesList $ table of
-  Nothing -> parentTable table >>= lookupVariableInTable i
+  Nothing -> parentVariablesTable table >>= lookupVariableInTable i
   Just t -> Just t
+
+findVariable :: Identifier -> ErrorChecker (Maybe Token)
+findVariable i = lookup i . variablesList . variablesTable <$> get
 
 putVariable :: Identifier -> ErrorChecker ()
 putVariable i = do
   env <- get
-  put $ Environment (putVariableInTable env i) (environmentLevel env)
+  put $ Environment (putVariableInTable env i) (functionsTable env) (environmentLevel env)
 
 putVariableInTable :: Environment -> Identifier -> VariablesTable
-putVariableInTable env i = VariablesTable (parentTable currentTable) newVariablesList
+putVariableInTable env i = VariablesTable (parentVariablesTable currentTable) newVariablesList
   where
     newVariablesList = (variablesList currentTable) ++ [(i, newToken)]
     newToken = VariableToken i currentLevel
     currentLevel = environmentLevel env
     currentTable = variablesTable env
+
+lookupFunction :: Identifier -> ErrorChecker (Maybe Token)
+lookupFunction i = do
+  env <- get
+  return $ lookupFunctionInTable i (functionsTable env)
+
+lookupFunctionInTable :: Identifier -> FunctionsTable -> (Maybe Token)
+lookupFunctionInTable i table = case lookup i $ functionsList $ table of
+  Nothing -> parentFunctionsTable table >>= lookupFunctionInTable i
+  Just t -> Just t
+
+findFunction :: Identifier -> ErrorChecker (Maybe Token)
+findFunction i = lookup i . functionsList . functionsTable <$> get
+
+putFunction :: Identifier -> ErrorChecker ()
+putFunction i = do
+  env <- get
+  put $ Environment (variablesTable env) (putFunctionInTable env i) (environmentLevel env)
+
+putFunctionInTable :: Environment -> Identifier -> FunctionsTable
+putFunctionInTable env i = FunctionsTable (parentFunctionsTable currentTable) newFunctionsList
+  where
+    newFunctionsList = (functionsList currentTable) ++ [(i, newToken)]
+    newToken = FunctionToken i currentLevel
+    currentLevel = environmentLevel env
+    currentTable = functionsTable env
 
 semanticCheck :: Program -> ErrorChecker Program
 semanticCheck p = checkProgram p
@@ -75,7 +104,7 @@ checkVariableDeclarator (Declarator i) = do
 checkFunctionDefinition :: FunctionDefinition -> ErrorChecker FunctionDefinition
 checkFunctionDefinition (FunctionDefinition d p c) = liftM3 FunctionDefinition cd cp cc
   where
-    cd = checkFunctionDeclarator "function" d
+    cd = checkFunctionDeclarator d
     cp = checkParameterTypeList p
     cc = checkCompoundStatement c
 
@@ -106,7 +135,7 @@ checkCompoundStatement = return
 
 checkIdentifier :: Identifier -> ErrorChecker Identifier
 checkIdentifier (Identifier s) = do
-  Environment variablesTable currentLevel <- get
-  put $ Environment variablesTable currentLevel
+  Environment variablesTable functionsTable currentLevel <- get
+  put $ Environment variablesTable functionsTable currentLevel
   tell [s]
   return (Identifier s)

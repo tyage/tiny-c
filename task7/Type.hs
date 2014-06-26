@@ -70,12 +70,18 @@ type ErrorChecker a = StateT Environment (WriterT [String] Maybe) a
 
 data Environment = Environment {
   variablesTable :: VariablesTable,
+  functionsTable :: FunctionsTable,
   environmentLevel :: Level
 }
 
 data VariablesTable = VariablesTable {
-  parentTable :: (Maybe VariablesTable),
+  parentVariablesTable :: (Maybe VariablesTable),
   variablesList :: [(Identifier, Token)]
+}
+
+data FunctionsTable = FunctionsTable {
+  parentFunctionsTable :: (Maybe FunctionsTable),
+  functionsList :: [(Identifier, Token)]
 }
 
 type Level = Int
