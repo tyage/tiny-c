@@ -13,6 +13,7 @@ setCurrentLevel i = do
   env <- get
   put $ Environment (variablesTable env) (functionsTable env) i
 
+-- variable utilities
 lookupVariable :: Identifier -> ErrorChecker (Maybe Token)
 lookupVariable i = do
   env <- get
@@ -39,6 +40,7 @@ putVariableInTable env i = VariablesTable (parentVariablesTable currentTable) ne
     currentLevel = environmentLevel env
     currentTable = variablesTable env
 
+-- function utilities
 lookupFunction :: Identifier -> ErrorChecker (Maybe Token)
 lookupFunction i = do
   env <- get
@@ -65,6 +67,7 @@ putFunctionInTable env i = FunctionsTable (parentFunctionsTable currentTable) ne
     currentLevel = environmentLevel env
     currentTable = functionsTable env
 
+-- semantic checker
 semanticCheck :: Program -> ErrorChecker Program
 semanticCheck p = checkProgram p
 
