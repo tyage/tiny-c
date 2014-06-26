@@ -9,10 +9,15 @@ import Data.Maybe
 import Type
 import Show
 
+setVariablesTable :: VariablesTable -> ErrorChecker ()
+setVariablesTable v = do
+  env <- get
+  put $ env {variablesTable = v}
+
 setCurrentLevel :: Int -> ErrorChecker ()
 setCurrentLevel i = do
   env <- get
-  put $ Environment (variablesTable env) (functionsTable env) i
+  put $ env {environmentLevel = i}
 
 -- variable utilities
 lookupVariable :: Identifier -> ErrorChecker (Maybe Token)
@@ -31,7 +36,7 @@ findVariable i = lookup i . variablesList . variablesTable <$> get
 putVariable :: Identifier -> ErrorChecker ()
 putVariable i = do
   env <- get
-  put $ Environment (putVariableInTable env i) (functionsTable env) (environmentLevel env)
+  put $ env {variablesTable = putVariableInTable env i}
 
 putVariableInTable :: Environment -> Identifier -> VariablesTable
 putVariableInTable env i = VariablesTable (parentVariablesTable currentTable) newVariablesList
@@ -44,7 +49,7 @@ putVariableInTable env i = VariablesTable (parentVariablesTable currentTable) ne
 putParameter :: Identifier -> ErrorChecker ()
 putParameter i = do
   env <- get
-  put $ Environment (putParameterInTable env i) (functionsTable env) (environmentLevel env)
+  put $ env {variablesTable = putVariableInTable env i}
 
 putParameterInTable :: Environment -> Identifier -> VariablesTable
 putParameterInTable env i = VariablesTable (parentVariablesTable currentTable) newVariablesList
@@ -58,7 +63,7 @@ putParameterInTable env i = VariablesTable (parentVariablesTable currentTable) n
 lookupFunction :: Identifier -> ErrorChecker (Maybe Token)
 lookupFunction i = do
   env <- get
-  return $ lookupFunctionInTable i (functionsTable env)
+  return $ lookupFunctionInTable i $ functionsTable env
 
 lookupFunctionInTable :: Identifier -> FunctionsTable -> (Maybe Token)
 lookupFunctionInTable i table = case lookup i $ functionsList $ table of
@@ -71,7 +76,7 @@ findFunction i = lookup i . functionsList . functionsTable <$> get
 putFunction :: Identifier -> ErrorChecker ()
 putFunction i = do
   env <- get
-  put $ Environment (variablesTable env) (putFunctionInTable env i) (environmentLevel env)
+  put $ env {functionsTable = putFunctionInTable env i}
 
 putFunctionInTable :: Environment -> Identifier -> FunctionsTable
 putFunctionInTable env i = FunctionsTable (parentFunctionsTable currentTable) newFunctionsList
@@ -105,11 +110,11 @@ checkVariableDeclarator:: Declarator -> ErrorChecker Declarator
 checkVariableDeclarator (Declarator i) = do
   -- 同一レベルで同名の変数宣言があった場合はエラーを出す
   v <- findVariable i
-  if isNothing v then return () else tell ["redeclaration of '" ++ show i ++ "'"]
+  when (isJust v) $ tell ["redeclaration of '" ++ show i ++ "'"]
 
   -- 同一レベルで同名の関数宣言があった場合はエラーを出す
   f <- findFunction i
-  if isNothing f then return () else tell ["'" ++ show i ++ "' redeclarated as different kind of symbol"]
+  when (isJust f) $ tell ["'" ++ show i ++ "' redeclarated as different kind of symbol"]
 
   -- lookupして、paramter宣言があった場合は警告を出す
   p <- lookupVariable i
@@ -131,19 +136,33 @@ checkFunctionDeclarator:: Declarator -> ErrorChecker Declarator
 checkFunctionDeclarator (Declarator i) = do
   -- 同一レベルで同名の変数宣言があった場合はエラーを出す
   v <- findVariable i
-  if isNothing v then return () else tell ["'" ++ show i ++ "' redeclarated as different kind of symbol"]
+  when (isJust v) $ tell ["'" ++ show i ++ "' redeclarated as different kind of symbol"]
 
   -- 同一レベルで同名の関数宣言があった場合はエラーを出す
   f <- findFunction i
-  if isNothing f then return () else tell ["redeclaration of '" ++ show i ++ "'"]
+  when (isJust f) $ tell ["redeclaration of '" ++ show i ++ "'"]
 
   putFunction i
   Declarator <$> checkIdentifier i
 
 checkParameterTypeList :: ParameterTypeList -> ErrorChecker ParameterTypeList
-checkParameterTypeList (ParameterTypeList p) = ParameterTypeList <$> mapM checkParameterDeclaration p
+checkParameterTypeList (ParameterTypeList p) = do
+  env <- get
+  setCurrentLevel 1
+  setVariablesTable $ VariablesTable (Just $ variablesTable env) []
+  ParameterTypeList <$> mapM checkParameterDeclaration p
 
-checkParameterDeclaration = return
+checkParameterDeclaration:: ParameterDeclaration -> ErrorChecker ParameterDeclaration
+checkParameterDeclaration (ParameterDeclaration d) = ParameterDeclaration <$> checkParameterDeclarator d
+
+checkParameterDeclarator:: Declarator -> ErrorChecker Declarator
+checkParameterDeclarator (Declarator i) = do
+  -- 同一レベルで同名の変数宣言(パラメータ宣言)があった場合はエラーを出す
+  v <- findVariable i
+  when (isJust v) $ tell ["redeclaration of '" ++ show i ++ "'"]
+
+  putParameter i
+  Declarator <$> checkIdentifier i
 
 checkCompoundStatement :: CompoundStatement -> ErrorChecker CompoundStatement
 checkCompoundStatement = return
