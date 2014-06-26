@@ -164,8 +164,25 @@ checkParameterDeclarator (Declarator i) = do
   putParameter i
   Declarator <$> checkIdentifier i
 
+checkStatement :: Statement -> ErrorChecker Statement
+checkStatement EmptyStatement = return EmptyStatement
+checkStatement (ExpressionStmt e) = return $ ExpressionStmt e
+checkStatement (CompoundStmt e) = return $ CompoundStmt e
+checkStatement (If e s1 s2) = return $ If e s1 s2
+checkStatement (While e s) = return $ While e s
+checkStatement (Return e) = return $ Return e
+
 checkCompoundStatement :: CompoundStatement -> ErrorChecker CompoundStatement
-checkCompoundStatement = return
+checkCompoundStatement (CompoundStatement d s) = liftM2 CompoundStatement cd cs
+  where
+    cd = checkDeclarationList d
+    cs = checkStatementList s
+
+checkDeclarationList :: DeclarationList -> ErrorChecker DeclarationList
+checkDeclarationList (DeclarationList d) = return $ DeclarationList d
+
+checkStatementList :: StatementList -> ErrorChecker StatementList
+checkStatementList (StatementList d) = return $ StatementList d
 
 checkIdentifier :: Identifier -> ErrorChecker Identifier
 checkIdentifier (Identifier s) = do
