@@ -44,7 +44,7 @@ putVariable i = do
   put $ env {variablesTable = putVariableInTable env i}
 
 putVariableInTable :: Environment -> Identifier -> VariablesTable
-putVariableInTable env i = VariablesTable (parentVariablesTable currentTable) newVariablesList
+putVariableInTable env i = currentTable {variablesList = newVariablesList}
   where
     newVariablesList = (variablesList currentTable) ++ [(i, newToken)]
     newToken = VariableToken i currentLevel
@@ -54,10 +54,10 @@ putVariableInTable env i = VariablesTable (parentVariablesTable currentTable) ne
 putParameter :: Identifier -> ErrorChecker ()
 putParameter i = do
   env <- get
-  put $ env {variablesTable = putVariableInTable env i}
+  put $ env {variablesTable = putParameterInTable env i}
 
 putParameterInTable :: Environment -> Identifier -> VariablesTable
-putParameterInTable env i = VariablesTable (parentVariablesTable currentTable) newVariablesList
+putParameterInTable env i = currentTable {variablesList = newVariablesList}
   where
     newVariablesList = (variablesList currentTable) ++ [(i, newToken)]
     newToken = ParameterToken i currentLevel
@@ -84,7 +84,7 @@ putFunction i = do
   put $ env {functionsTable = putFunctionInTable env i}
 
 putFunctionInTable :: Environment -> Identifier -> FunctionsTable
-putFunctionInTable env i = FunctionsTable (parentFunctionsTable currentTable) newFunctionsList
+putFunctionInTable env i = currentTable {functionsList = newFunctionsList}
   where
     newFunctionsList = (functionsList currentTable) ++ [(i, newToken)]
     newToken = FunctionToken i currentLevel
