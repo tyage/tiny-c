@@ -14,6 +14,11 @@ setVariablesTable v = do
   env <- get
   put $ env {variablesTable = v}
 
+createVariablesTable :: ErrorChecker ()
+createVariablesTable = do
+  env <- get
+  setVariablesTable $ VariablesTable (Just $ variablesTable env) []
+
 setCurrentLevel :: Int -> ErrorChecker ()
 setCurrentLevel i = do
   env <- get
@@ -149,7 +154,7 @@ checkParameterTypeList :: ParameterTypeList -> ErrorChecker ParameterTypeList
 checkParameterTypeList (ParameterTypeList p) = do
   env <- get
   setCurrentLevel 1
-  setVariablesTable $ VariablesTable (Just $ variablesTable env) []
+  createVariablesTable
   ParameterTypeList <$> mapM checkParameterDeclaration p
 
 checkParameterDeclaration:: ParameterDeclaration -> ErrorChecker ParameterDeclaration
@@ -173,13 +178,17 @@ checkStatement (While e s) = return $ While e s
 checkStatement (Return e) = return $ Return e
 
 checkCompoundStatement :: CompoundStatement -> ErrorChecker CompoundStatement
-checkCompoundStatement (CompoundStatement d s) = liftM2 CompoundStatement cd cs
-  where
-    cd = checkDeclarationList d
-    cs = checkStatementList s
+checkCompoundStatement (CompoundStatement d s) = do
+  env <- get
+  setCurrentLevel $ (environmentLevel env) + 1
+  createVariablesTable
+  liftM2 CompoundStatement cd cs
+    where
+      cd = checkDeclarationList d
+      cs = checkStatementList s
 
 checkDeclarationList :: DeclarationList -> ErrorChecker DeclarationList
-checkDeclarationList (DeclarationList d) = return $ DeclarationList d
+checkDeclarationList (DeclarationList d) = DeclarationList <$> mapM checkDeclaration d
 
 checkStatementList :: StatementList -> ErrorChecker StatementList
 checkStatementList (StatementList d) = return $ StatementList d
