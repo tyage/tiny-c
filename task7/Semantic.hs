@@ -41,6 +41,19 @@ putVariableInTable env i = VariablesTable (parentVariablesTable currentTable) ne
     currentLevel = environmentLevel env
     currentTable = variablesTable env
 
+putParameter :: Identifier -> ErrorChecker ()
+putParameter i = do
+  env <- get
+  put $ Environment (putParameterInTable env i) (functionsTable env) (environmentLevel env)
+
+putParameterInTable :: Environment -> Identifier -> VariablesTable
+putParameterInTable env i = VariablesTable (parentVariablesTable currentTable) newVariablesList
+  where
+    newVariablesList = (variablesList currentTable) ++ [(i, newToken)]
+    newToken = ParameterToken i currentLevel
+    currentLevel = environmentLevel env
+    currentTable = variablesTable env
+
 -- function utilities
 lookupFunction :: Identifier -> ErrorChecker (Maybe Token)
 lookupFunction i = do
@@ -92,11 +105,17 @@ checkVariableDeclarator:: Declarator -> ErrorChecker Declarator
 checkVariableDeclarator (Declarator i) = do
   -- 同一レベルで同名の変数宣言があった場合はエラーを出す
   v <- findVariable i
-  if isNothing v then return () else tell ["redeclaration of " ++ show i]
+  if isNothing v then return () else tell ["redeclaration of '" ++ show i ++ "'"]
 
   -- 同一レベルで同名の関数宣言があった場合はエラーを出す
   f <- findFunction i
-  if isNothing f then return () else tell [show i ++ " redeclarated as different kind of symbol"]
+  if isNothing f then return () else tell ["'" ++ show i ++ "' redeclarated as different kind of symbol"]
+
+  -- lookupして、paramter宣言があった場合は警告を出す
+  p <- lookupVariable i
+  case p of
+    Just (ParameterToken i l) -> tell ["declaration of '" ++ show i ++ "' shadows a parameter"]
+    _ -> return ()
 
   putVariable i
   Declarator <$> checkIdentifier i
@@ -112,11 +131,11 @@ checkFunctionDeclarator:: Declarator -> ErrorChecker Declarator
 checkFunctionDeclarator (Declarator i) = do
   -- 同一レベルで同名の変数宣言があった場合はエラーを出す
   v <- findVariable i
-  if isNothing v then return () else tell [show i ++ " redeclarated as different kind of symbol"]
+  if isNothing v then return () else tell ["'" ++ show i ++ "' redeclarated as different kind of symbol"]
 
   -- 同一レベルで同名の関数宣言があった場合はエラーを出す
   f <- findFunction i
-  if isNothing f then return () else tell ["redeclaration of " ++ show i]
+  if isNothing f then return () else tell ["redeclaration of '" ++ show i ++ "'"]
 
   putFunction i
   Declarator <$> checkIdentifier i
