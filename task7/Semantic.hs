@@ -198,7 +198,7 @@ checkDeclarationList :: DeclarationList -> ErrorChecker DeclarationList
 checkDeclarationList (DeclarationList d) = DeclarationList <$> mapM checkDeclaration d
 
 checkStatementList :: StatementList -> ErrorChecker StatementList
-checkStatementList (StatementList d) = return $ StatementList d
+checkStatementList (StatementList s) = StatementList <$> mapM checkStatement s
 
 checkExpression :: Expr -> ErrorChecker Expr
 checkExpression = return
