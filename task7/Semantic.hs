@@ -4,6 +4,7 @@ import Control.Applicative
 import Control.Monad
 import Control.Monad.Writer
 import Control.Monad.State
+import Data.Maybe
 
 import Type
 import Show
@@ -91,15 +92,11 @@ checkVariableDeclarator:: Declarator -> ErrorChecker Declarator
 checkVariableDeclarator (Declarator i) = do
   -- 同一レベルで同名の変数宣言があった場合はエラーを出す
   v <- findVariable i
-  case v of
-    Nothing -> return ()
-    _ -> tell ["redeclaration of " ++ show i]
+  if isNothing v then return () else tell ["redeclaration of " ++ show i]
 
   -- 同一レベルで同名の関数宣言があった場合はエラーを出す
   f <- findFunction i
-  case f of
-    Nothing -> return ()
-    _ -> tell [show i ++ "redeclarated as different kind of symbol"]
+  if isNothing f then return () else tell [show i ++ " redeclarated as different kind of symbol"]
 
   putVariable i
   Declarator <$> checkIdentifier i
@@ -115,15 +112,11 @@ checkFunctionDeclarator:: Declarator -> ErrorChecker Declarator
 checkFunctionDeclarator (Declarator i) = do
   -- 同一レベルで同名の変数宣言があった場合はエラーを出す
   v <- findVariable i
-  case v of
-    Nothing -> return ()
-    _ -> tell [show i ++ "redeclarated as different kind of symbol"]
+  if isNothing v then return () else tell [show i ++ " redeclarated as different kind of symbol"]
 
   -- 同一レベルで同名の関数宣言があった場合はエラーを出す
   f <- findFunction i
-  case f of
-    Nothing -> return ()
-    _ -> tell ["redefinition of " ++ show i]
+  if isNothing f then return () else tell ["redeclaration of " ++ show i]
 
   putFunction i
   Declarator <$> checkIdentifier i
