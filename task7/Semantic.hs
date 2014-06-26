@@ -53,22 +53,48 @@ checkDeclaration (Declaration d) = Declaration <$> checkDeclaratorList d
 checkDeclaration (EmptyDeclaration) = return EmptyDeclaration
 
 checkDeclaratorList :: DeclaratorList -> ErrorChecker DeclaratorList
-checkDeclaratorList (DeclaratorList d) = DeclaratorList <$> mapM checkDeclarator d
+checkDeclaratorList (DeclaratorList d) = DeclaratorList <$> mapM checkVariableDeclarator d
 
-checkDeclarator :: Declarator -> ErrorChecker Declarator
-checkDeclarator (Declarator i) = do
-  t <- lookupVariable i
-  case t of
-    Nothing -> putVariable i
+checkVariableDeclarator:: Declarator -> ErrorChecker Declarator
+checkVariableDeclarator (Declarator i) = do
+  -- 同一レベルで同名の変数宣言があった場合はエラーを出す
+  v <- findVariable i
+  case v of
+    Nothing -> return ()
     _ -> tell ["redeclaration of " ++ show i]
+
+  -- 同一レベルで同名の関数宣言があった場合はエラーを出す
+  f <- findFunction i
+  case f of
+    Nothing -> return ()
+    _ -> tell [show i ++ "redeclarated as different kind of symbol"]
+
+  putVariable i
   Declarator <$> checkIdentifier i
 
 checkFunctionDefinition :: FunctionDefinition -> ErrorChecker FunctionDefinition
 checkFunctionDefinition (FunctionDefinition d p c) = liftM3 FunctionDefinition cd cp cc
   where
-    cd = checkDeclarator d
+    cd = checkFunctionDeclarator "function" d
     cp = checkParameterTypeList p
     cc = checkCompoundStatement c
+
+checkFunctionDeclarator:: Declarator -> ErrorChecker Declarator
+checkFunctionDeclarator (Declarator i) = do
+  -- 同一レベルで同名の変数宣言があった場合はエラーを出す
+  v <- findVariable i
+  case v of
+    Nothing -> return ()
+    _ -> tell [show i ++ "redeclarated as different kind of symbol"]
+
+  -- 同一レベルで同名の関数宣言があった場合はエラーを出す
+  f <- findFunction i
+  case f of
+    Nothing -> return ()
+    _ -> tell ["redefinition of " ++ show i]
+
+  putFunction i
+  Declarator <$> checkIdentifier i
 
 checkParameterTypeList :: ParameterTypeList -> ErrorChecker ParameterTypeList
 checkParameterTypeList (ParameterTypeList p) = ParameterTypeList <$> mapM checkParameterDeclaration p
