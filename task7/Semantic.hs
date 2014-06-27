@@ -214,18 +214,26 @@ checkExpression (Divide e1 e2) = liftM2 Divide ce1 ce2
     ce1 = checkExpression e1
     ce2 = checkExpression e2
 checkExpression (UnaryMinus e) = UnaryMinus <$> checkExpression e
-checkExpression (FunctionCall i a) = liftM2 FunctionCall ci ca
-  where
-    ci = checkIdentifier i
-    ca = checkArgumentExprList a
+checkExpression (FunctionCall i a) = do
+  -- 関数が参照できない場合は警告、変数・パラメータの場合はエラー
+  t <- lookupToken i
+  case t of
+    Just (VariableToken i l) -> tell ["variable '" ++ show i ++ "' is used as function"]
+    Just (ParameterToken i l) -> tell ["variable '" ++ show i ++ "' is used as function"]
+    Nothing -> tell ["'" ++ show i ++ "' undeclared function"]
+    _ -> return ()
+
+  liftM2 FunctionCall ci ca
+    where
+      ci = checkIdentifier i
+      ca = checkArgumentExprList a
 checkExpression (Ident i) = do
   -- 変数が参照できない場合・関数である場合はエラー
   t <- lookupToken i
   case t of
-    Just (VariableToken i l) -> return ()
     Just (FunctionToken i l) -> tell ["function '" ++ show i ++ "' is used as variable"]
-    Just (ParameterToken i l) -> return ()
-    _ -> tell ["'" ++ show i ++ "' undeclared variable"]
+    Nothing -> tell ["'" ++ show i ++ "' undeclared variable"]
+    _ -> return ()
 
   Ident <$> checkIdentifier i
 checkExpression (Const c) = Const <$> checkConstant c
