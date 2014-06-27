@@ -149,10 +149,10 @@ checkStatement (Return e) = Return <$> checkExpression e
 
 checkCompoundStatement :: CompoundStatement -> ErrorChecker CompoundStatement
 checkCompoundStatement (CompoundStatement d s) = do
-  env <- get
   createTokensTable
   newCompoundStatement <- liftM2 CompoundStatement cd cs
-  setTokensTable $ tokensTable env
+  env <- get
+  setTokensTable $ fromJust $ parentTokensTable $ tokensTable env
   return newCompoundStatement
     where
       cd = checkDeclarationList d
