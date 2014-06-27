@@ -90,8 +90,10 @@ checkVariableDeclarator (Declarator i) = do
 
 checkFunctionDefinition :: FunctionDefinition -> ErrorChecker FunctionDefinition
 checkFunctionDefinition (FunctionDefinition d p c) = do
+  env <- get
   newFunctionDefinition <- liftM3 FunctionDefinition cd cp cc
   setCurrentLevel 0
+  setTokensTable $ tokensTable env
   return newFunctionDefinition
     where
       cd = checkFunctionDeclarator d
@@ -153,6 +155,7 @@ checkCompoundStatement (CompoundStatement d s) = do
   createTokensTable
   newCompoundStatement <- liftM2 CompoundStatement cd cs
   setCurrentLevel $ (environmentLevel env)
+  setTokensTable $ tokensTable env
   return newCompoundStatement
     where
       cd = checkDeclarationList d
