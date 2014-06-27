@@ -77,10 +77,9 @@ instance Show Identifier where
   show (TokenIdentifier t) = show t
 
 instance Show Token where
-  show (VariableToken i l) = show i ++ ":" ++ show l
-  show (FunctionToken i l) = show i ++ ":" ++ show l
-  show (ParameterToken i l) = show i ++ ":" ++ show l
-  show (UndefinedFunctionToken i l) = show i ++ ":" ++ show l
+  show (VariableToken i l o) = show i ++ ":" ++ show l ++ ":" ++ show o
+  show (ParameterToken i l o) = show i ++ ":" ++ show l ++ ":" ++ show o
+  show (FunctionToken i l p) = show i ++ ":" ++ show l
   show FreshToken = ""
 
 instance Show Constant where

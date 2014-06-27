@@ -60,12 +60,15 @@ data Identifier = Identifier String
                 | TokenIdentifier Token
                 deriving (Eq)
 
-data Token = VariableToken Identifier Level
-           | FunctionToken Identifier Level
-           | ParameterToken Identifier Level
-           | UndefinedFunctionToken Identifier Level
+data Token = VariableToken Identifier Level Offset
+           | ParameterToken Identifier Level Offset
+           | FunctionToken Identifier Level ParameterLength
            | FreshToken
            deriving (Eq)
+
+type Offset = Int
+
+type ParameterLength = Int
 
 data Constant = Constant Integer
 

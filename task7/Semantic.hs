@@ -40,17 +40,25 @@ lookupTokenInTable i table = case lookup i $ tokensList $ table of
 findToken :: Identifier -> ErrorChecker (Maybe Token)
 findToken i = lookup i . tokensList . tokensTable <$> get
 
-putToken :: (Identifier -> Level -> Token) -> Identifier -> ErrorChecker ()
-putToken t i = do
+putVariableToken :: Identifier -> Offset -> ErrorChecker ()
+putVariableToken i o = do
   env <- get
-  put $ env {tokensTable = putTokenInTable env t i}
+  putToken env i $ VariableToken i (environmentLevel env) o
 
-putTokenInTable :: Environment -> (Identifier -> Level -> Token) -> Identifier -> TokensTable
-putTokenInTable env t i = currentTable {tokensList = newTokensList}
+putParameterToken :: Identifier -> Offset -> ErrorChecker ()
+putParameterToken i o = do
+  env <- get
+  putToken env i $ ParameterToken i (environmentLevel env) o
+
+putFunctionToken :: Identifier -> ParameterLength -> ErrorChecker ()
+putFunctionToken i p = do
+  env <- get
+  putToken env i $ FunctionToken i (environmentLevel env) p
+
+putToken :: Environment -> Identifier -> Token -> ErrorChecker ()
+putToken env i t = put $ env {tokensTable = newTable}
   where
-    newTokensList = (tokensList currentTable) ++ [(i, newToken)]
-    newToken = t i currentLevel
-    currentLevel = environmentLevel env
+    newTable = currentTable {tokensList = (tokensList currentTable) ++ [(i, t)]}
     currentTable = tokensTable env
 
 -- semantic checker
@@ -76,17 +84,17 @@ checkVariableDeclarator (Declarator i) = do
   -- 同一レベルで同名の変数宣言・関数宣言があった場合はエラーを出す
   t <- findToken i
   case t of
-    Just (VariableToken i l) -> tell ["redeclaration of '" ++ show i ++ "'"]
-    Just (FunctionToken i l) -> tell ["'" ++ show i ++ "' redeclarated as different kind of symbol"]
+    Just (VariableToken i l o) -> tell ["redeclaration of '" ++ show i ++ "'"]
+    Just (FunctionToken i l p) -> tell ["'" ++ show i ++ "' redeclarated as different kind of symbol"]
     _ -> return ()
 
   -- lookupして、paramter宣言があった場合は警告を出す
   t <- lookupToken i
   case t of
-    Just (ParameterToken i l) -> tell ["declaration of '" ++ show i ++ "' shadows a parameter"]
+    Just (ParameterToken i l o) -> tell ["declaration of '" ++ show i ++ "' shadows a parameter"]
     _ -> return ()
 
-  putToken VariableToken i
+  putVariableToken i 0
   Declarator <$> checkIdentifier i
 
 checkFunctionDefinition :: FunctionDefinition -> ErrorChecker FunctionDefinition
@@ -106,11 +114,11 @@ checkFunctionDeclarator (Declarator i) = do
   -- 同一レベルで同名の変数宣言があった場合はエラーを出す
   t <- findToken i
   case t of
-    Just (VariableToken i l) -> tell ["'" ++ show i ++ "' redeclarated as different kind of symbol"]
-    Just (FunctionToken i l) -> tell ["redefinition of '" ++ show i ++ "'"]
+    Just (VariableToken i l o) -> tell ["'" ++ show i ++ "' redeclarated as different kind of symbol"]
+    Just (FunctionToken i l p) -> tell ["redefinition of '" ++ show i ++ "'"]
     _ -> return ()
 
-  putToken FunctionToken i
+  putFunctionToken i 0
   Declarator <$> checkIdentifier i
 
 checkParameterTypeList :: ParameterTypeList -> ErrorChecker ParameterTypeList
@@ -126,10 +134,10 @@ checkParameterDeclarator (Declarator i) = do
   -- 同一レベルで同名のパラメータ宣言があった場合はエラーを出す
   t <- findToken i
   case t of
-    Just (ParameterToken i l) -> tell ["redeclaration of '" ++ show i ++ "'"]
+    Just (ParameterToken i l o) -> tell ["redeclaration of '" ++ show i ++ "'"]
     _ -> return ()
 
-  putToken ParameterToken i
+  putParameterToken i 0
   Declarator <$> checkIdentifier i
 
 checkStatement :: Statement -> ErrorChecker Statement
@@ -223,8 +231,8 @@ checkExpression (FunctionCall i a) = do
   -- 関数が参照できない場合は警告、変数・パラメータの場合はエラー
   t <- lookupToken i
   case t of
-    Just (VariableToken i l) -> tell ["variable '" ++ show i ++ "' is used as function"]
-    Just (ParameterToken i l) -> tell ["variable '" ++ show i ++ "' is used as function"]
+    Just (VariableToken i l o) -> tell ["variable '" ++ show i ++ "' is used as function"]
+    Just (ParameterToken i l o) -> tell ["variable '" ++ show i ++ "' is used as function"]
     Nothing -> tell ["'" ++ show i ++ "' undeclared function"]
     _ -> return ()
 
@@ -236,7 +244,7 @@ checkExpression (Ident i) = do
   -- 変数が参照できない場合・関数である場合はエラー
   t <- lookupToken i
   case t of
-    Just (FunctionToken i l) -> tell ["function '" ++ show i ++ "' is used as variable"]
+    Just (FunctionToken i l p) -> tell ["function '" ++ show i ++ "' is used as variable"]
     Nothing -> tell ["'" ++ show i ++ "' undeclared variable"]
     _ -> return ()
 
