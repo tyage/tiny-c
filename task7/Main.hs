@@ -4,6 +4,8 @@ import System.Environment
 import Text.ParserCombinators.Parsec
 import Control.Monad.State
 import Control.Monad.Writer
+import Data.Maybe
+import Data.List
 
 import Type
 import Parser
@@ -13,8 +15,12 @@ import Semantic
 run :: String -> String
 run input = case parse program "TinyC" input of
             Left err -> show err
-            Right program -> show $ evalStateT (semanticCheck program) initialEnv
-              where initialEnv = (Environment (TokensTable Nothing []) 0)
+            Right program -> errorMessages ++ "\n" ++ programTree
+              where
+                programTree = show $ fst $ result
+                errorMessages = concat $ intersperse "\n" $ snd $ result
+                result = fromJust $ runWriterT $ evalStateT (semanticCheck program) initialEnv
+                initialEnv = (Environment (TokensTable Nothing []) 0)
 
 main :: IO ()
 main = do
