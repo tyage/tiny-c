@@ -148,7 +148,9 @@ checkCompoundStatement (CompoundStatement d s) = do
   env <- get
   setCurrentLevel $ (environmentLevel env) + 1
   createTokensTable
-  liftM2 CompoundStatement cd cs
+  newCompoundStatement <- liftM2 CompoundStatement cd cs
+  setCurrentLevel $ (environmentLevel env)
+  return newCompoundStatement
     where
       cd = checkDeclarationList d
       cs = checkStatementList s
