@@ -69,19 +69,13 @@ data Constant = Constant Integer
 type ErrorChecker a = StateT Environment (WriterT [String] Maybe) a
 
 data Environment = Environment {
-  variablesTable :: VariablesTable,
-  functionsTable :: FunctionsTable,
+  tokensTable :: TokensTable,
   environmentLevel :: Level
 }
 
-data VariablesTable = VariablesTable {
-  parentVariablesTable :: (Maybe VariablesTable),
-  variablesList :: [(Identifier, Token)]
-}
-
-data FunctionsTable = FunctionsTable {
-  parentFunctionsTable :: (Maybe FunctionsTable),
-  functionsList :: [(Identifier, Token)]
+data TokensTable = TokensTable {
+  parentTokensTable :: (Maybe TokensTable),
+  tokensList :: [(Identifier, Token)]
 }
 
 type Level = Int

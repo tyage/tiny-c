@@ -14,7 +14,7 @@ run :: String -> String
 run input = case parse program "TinyC" input of
             Left err -> show err
             Right program -> show $ execWriterT $ evalStateT (semanticCheck program) initialEnv
-              where initialEnv = (Environment (VariablesTable Nothing []) (FunctionsTable Nothing []) 0)
+              where initialEnv = (Environment (TokensTable Nothing []) 0)
 
 main :: IO ()
 main = do

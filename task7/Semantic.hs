@@ -9,87 +9,46 @@ import Data.Maybe
 import Type
 import Show
 
-setVariablesTable :: VariablesTable -> ErrorChecker ()
-setVariablesTable v = do
+setTokensTable :: TokensTable -> ErrorChecker ()
+setTokensTable v = do
   env <- get
-  put $ env {variablesTable = v}
+  put $ env {tokensTable = v}
 
-createVariablesTable :: ErrorChecker ()
-createVariablesTable = do
+createTokensTable :: ErrorChecker ()
+createTokensTable = do
   env <- get
-  setVariablesTable $ VariablesTable (Just $ variablesTable env) []
+  setTokensTable $ TokensTable (Just $ tokensTable env) []
 
 setCurrentLevel :: Int -> ErrorChecker ()
 setCurrentLevel i = do
   env <- get
   put $ env {environmentLevel = i}
 
--- variable utilities
-lookupVariable :: Identifier -> ErrorChecker (Maybe Token)
-lookupVariable i = do
+lookupToken :: Identifier -> ErrorChecker (Maybe Token)
+lookupToken i = do
   env <- get
-  return $ lookupVariableInTable i (variablesTable env)
+  return $ lookupTokenInTable i (tokensTable env)
 
-lookupVariableInTable :: Identifier -> VariablesTable -> (Maybe Token)
-lookupVariableInTable i table = case lookup i $ variablesList $ table of
-  Nothing -> parentVariablesTable table >>= lookupVariableInTable i
+lookupTokenInTable :: Identifier -> TokensTable -> (Maybe Token)
+lookupTokenInTable i table = case lookup i $ tokensList $ table of
+  Nothing -> parentTokensTable table >>= lookupTokenInTable i
   Just t -> Just t
 
-findVariable :: Identifier -> ErrorChecker (Maybe Token)
-findVariable i = lookup i . variablesList . variablesTable <$> get
+findToken :: Identifier -> ErrorChecker (Maybe Token)
+findToken i = lookup i . tokensList . tokensTable <$> get
 
-putVariable :: Identifier -> ErrorChecker ()
-putVariable i = do
+putToken :: (Identifier -> Level -> Token) -> Identifier -> ErrorChecker ()
+putToken t i = do
   env <- get
-  put $ env {variablesTable = putVariableInTable env i}
+  put $ env {tokensTable = putTokenInTable env t i}
 
-putVariableInTable :: Environment -> Identifier -> VariablesTable
-putVariableInTable env i = currentTable {variablesList = newVariablesList}
+putTokenInTable :: Environment -> (Identifier -> Level -> Token) -> Identifier -> TokensTable
+putTokenInTable env t i = currentTable {tokensList = newTokensList}
   where
-    newVariablesList = (variablesList currentTable) ++ [(i, newToken)]
-    newToken = VariableToken i currentLevel
+    newTokensList = (tokensList currentTable) ++ [(i, newToken)]
+    newToken = t i currentLevel
     currentLevel = environmentLevel env
-    currentTable = variablesTable env
-
-putParameter :: Identifier -> ErrorChecker ()
-putParameter i = do
-  env <- get
-  put $ env {variablesTable = putParameterInTable env i}
-
-putParameterInTable :: Environment -> Identifier -> VariablesTable
-putParameterInTable env i = currentTable {variablesList = newVariablesList}
-  where
-    newVariablesList = (variablesList currentTable) ++ [(i, newToken)]
-    newToken = ParameterToken i currentLevel
-    currentLevel = environmentLevel env
-    currentTable = variablesTable env
-
--- function utilities
-lookupFunction :: Identifier -> ErrorChecker (Maybe Token)
-lookupFunction i = do
-  env <- get
-  return $ lookupFunctionInTable i $ functionsTable env
-
-lookupFunctionInTable :: Identifier -> FunctionsTable -> (Maybe Token)
-lookupFunctionInTable i table = case lookup i $ functionsList $ table of
-  Nothing -> parentFunctionsTable table >>= lookupFunctionInTable i
-  Just t -> Just t
-
-findFunction :: Identifier -> ErrorChecker (Maybe Token)
-findFunction i = lookup i . functionsList . functionsTable <$> get
-
-putFunction :: Identifier -> ErrorChecker ()
-putFunction i = do
-  env <- get
-  put $ env {functionsTable = putFunctionInTable env i}
-
-putFunctionInTable :: Environment -> Identifier -> FunctionsTable
-putFunctionInTable env i = currentTable {functionsList = newFunctionsList}
-  where
-    newFunctionsList = (functionsList currentTable) ++ [(i, newToken)]
-    newToken = FunctionToken i currentLevel
-    currentLevel = environmentLevel env
-    currentTable = functionsTable env
+    currentTable = tokensTable env
 
 -- semantic checker
 semanticCheck :: Program -> ErrorChecker Program
@@ -113,21 +72,20 @@ checkDeclaratorList (DeclaratorList d) = DeclaratorList <$> mapM checkVariableDe
 
 checkVariableDeclarator:: Declarator -> ErrorChecker Declarator
 checkVariableDeclarator (Declarator i) = do
-  -- 同一レベルで同名の変数宣言があった場合はエラーを出す
-  v <- findVariable i
-  when (isJust v) $ tell ["redeclaration of '" ++ show i ++ "'"]
-
-  -- 同一レベルで同名の関数宣言があった場合はエラーを出す
-  f <- findFunction i
-  when (isJust f) $ tell ["'" ++ show i ++ "' redeclarated as different kind of symbol"]
+  -- 同一レベルで同名の変数宣言・関数宣言があった場合はエラーを出す
+  t <- findToken i
+  case t of
+    Just (VariableToken i l) -> tell ["redeclaration of '" ++ show i ++ "'"]
+    Just (FunctionToken i l) -> tell ["'" ++ show i ++ "' redeclarated as different kind of symbol"]
+    _ -> return ()
 
   -- lookupして、paramter宣言があった場合は警告を出す
-  p <- lookupVariable i
-  case p of
+  t <- lookupToken i
+  case t of
     Just (ParameterToken i l) -> tell ["declaration of '" ++ show i ++ "' shadows a parameter"]
     _ -> return ()
 
-  putVariable i
+  putToken VariableToken i
   Declarator <$> checkIdentifier i
 
 checkFunctionDefinition :: FunctionDefinition -> ErrorChecker FunctionDefinition
@@ -140,21 +98,20 @@ checkFunctionDefinition (FunctionDefinition d p c) = liftM3 FunctionDefinition c
 checkFunctionDeclarator:: Declarator -> ErrorChecker Declarator
 checkFunctionDeclarator (Declarator i) = do
   -- 同一レベルで同名の変数宣言があった場合はエラーを出す
-  v <- findVariable i
-  when (isJust v) $ tell ["'" ++ show i ++ "' redeclarated as different kind of symbol"]
+  t <- findToken i
+  case t of
+    Just (VariableToken i l) -> tell ["'" ++ show i ++ "' redeclarated as different kind of symbol"]
+    Just (FunctionToken i l) -> tell ["redefinition of '" ++ show i ++ "'"]
+    _ -> return ()
 
-  -- 同一レベルで同名の関数宣言があった場合はエラーを出す
-  f <- findFunction i
-  when (isJust f) $ tell ["redeclaration of '" ++ show i ++ "'"]
-
-  putFunction i
+  putToken FunctionToken i
   Declarator <$> checkIdentifier i
 
 checkParameterTypeList :: ParameterTypeList -> ErrorChecker ParameterTypeList
 checkParameterTypeList (ParameterTypeList p) = do
   env <- get
   setCurrentLevel 1
-  createVariablesTable
+  createTokensTable
   ParameterTypeList <$> mapM checkParameterDeclaration p
 
 checkParameterDeclaration:: ParameterDeclaration -> ErrorChecker ParameterDeclaration
@@ -162,11 +119,13 @@ checkParameterDeclaration (ParameterDeclaration d) = ParameterDeclaration <$> ch
 
 checkParameterDeclarator:: Declarator -> ErrorChecker Declarator
 checkParameterDeclarator (Declarator i) = do
-  -- 同一レベルで同名の変数宣言(パラメータ宣言)があった場合はエラーを出す
-  v <- findVariable i
-  when (isJust v) $ tell ["redeclaration of '" ++ show i ++ "'"]
+  -- 同一レベルで同名のパラメータ宣言があった場合はエラーを出す
+  t <- findToken i
+  case t of
+    Just (ParameterToken i l) -> tell ["redeclaration of '" ++ show i ++ "'"]
+    _ -> return ()
 
-  putParameter i
+  putToken ParameterToken i
   Declarator <$> checkIdentifier i
 
 checkStatement :: Statement -> ErrorChecker Statement
@@ -188,7 +147,7 @@ checkCompoundStatement :: CompoundStatement -> ErrorChecker CompoundStatement
 checkCompoundStatement (CompoundStatement d s) = do
   env <- get
   setCurrentLevel $ (environmentLevel env) + 1
-  createVariablesTable
+  createTokensTable
   liftM2 CompoundStatement cd cs
     where
       cd = checkDeclarationList d
@@ -267,7 +226,7 @@ checkArgumentExprList :: ArgumentExprList -> ErrorChecker ArgumentExprList
 checkArgumentExprList (ArgumentExprList e) = ArgumentExprList <$> mapM checkExpression e
 
 checkIdentifier :: Identifier -> ErrorChecker Identifier
-checkIdentifier (Identifier s) = return $ Identifier s
+checkIdentifier = return
 
 checkConstant :: Constant -> ErrorChecker Constant
 checkConstant = return
