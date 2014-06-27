@@ -218,7 +218,16 @@ checkExpression (FunctionCall i a) = liftM2 FunctionCall ci ca
   where
     ci = checkIdentifier i
     ca = checkArgumentExprList a
-checkExpression (Ident i) = Ident <$> checkIdentifier i
+checkExpression (Ident i) = do
+  -- 変数が参照できない場合・関数である場合はエラー
+  t <- lookupToken i
+  case t of
+    Just (VariableToken i l) -> return ()
+    Just (FunctionToken i l) -> tell ["function '" ++ show i ++ "' is used as variable"]
+    Just (ParameterToken i l) -> return ()
+    _ -> tell ["'" ++ show i ++ "' undeclared variable"]
+
+  Ident <$> checkIdentifier i
 checkExpression (Const c) = Const <$> checkConstant c
 checkExpression (Parens e) = Parens <$> checkExpression e
 
