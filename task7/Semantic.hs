@@ -267,11 +267,7 @@ checkArgumentExprList :: ArgumentExprList -> ErrorChecker ArgumentExprList
 checkArgumentExprList (ArgumentExprList e) = ArgumentExprList <$> mapM checkExpression e
 
 checkIdentifier :: Identifier -> ErrorChecker Identifier
-checkIdentifier (Identifier s) = do
-  Environment variablesTable functionsTable currentLevel <- get
-  put $ Environment variablesTable functionsTable currentLevel
-  tell [s]
-  return (Identifier s)
+checkIdentifier (Identifier s) = return $ Identifier s
 
 checkConstant :: Constant -> ErrorChecker Constant
 checkConstant = return
