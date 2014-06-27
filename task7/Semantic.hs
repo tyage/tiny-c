@@ -1,6 +1,6 @@
 module Semantic where
 
-import Control.Applicative
+import Control.Applicative hiding (Const)
 import Control.Monad
 import Control.Monad.Writer
 import Control.Monad.State
@@ -201,7 +201,70 @@ checkStatementList :: StatementList -> ErrorChecker StatementList
 checkStatementList (StatementList s) = StatementList <$> mapM checkStatement s
 
 checkExpression :: Expr -> ErrorChecker Expr
-checkExpression = return
+checkExpression (ExprList e) = ExprList <$> mapM checkExpression e
+checkExpression (Assign i e) = liftM2 Assign ci ce
+  where
+    ci = checkIdentifier i
+    ce = checkExpression e
+checkExpression (Or e1 e2) = liftM2 Or ce1 ce2
+  where
+    ce1 = checkExpression e1
+    ce2 = checkExpression e2
+checkExpression (And e1 e2) = liftM2 And ce1 ce2
+  where
+    ce1 = checkExpression e1
+    ce2 = checkExpression e2
+checkExpression (Equal e1 e2) = liftM2 Equal ce1 ce2
+  where
+    ce1 = checkExpression e1
+    ce2 = checkExpression e2
+checkExpression (NotEqual e1 e2) = liftM2 NotEqual ce1 ce2
+  where
+    ce1 = checkExpression e1
+    ce2 = checkExpression e2
+checkExpression (Lt e1 e2) = liftM2 Lt ce1 ce2
+  where
+    ce1 = checkExpression e1
+    ce2 = checkExpression e2
+checkExpression (Gt e1 e2) = liftM2 Gt ce1 ce2
+  where
+    ce1 = checkExpression e1
+    ce2 = checkExpression e2
+checkExpression (Le e1 e2) = liftM2 Le ce1 ce2
+  where
+    ce1 = checkExpression e1
+    ce2 = checkExpression e2
+checkExpression (Ge e1 e2) = liftM2 Ge ce1 ce2
+  where
+    ce1 = checkExpression e1
+    ce2 = checkExpression e2
+checkExpression (Plus e1 e2) = liftM2 Plus ce1 ce2
+  where
+    ce1 = checkExpression e1
+    ce2 = checkExpression e2
+checkExpression (Minus e1 e2) = liftM2 Minus ce1 ce2
+  where
+    ce1 = checkExpression e1
+    ce2 = checkExpression e2
+checkExpression (Multiple e1 e2) = liftM2 Multiple ce1 ce2
+  where
+    ce1 = checkExpression e1
+    ce2 = checkExpression e2
+checkExpression (Divide e1 e2) = liftM2 Divide ce1 ce2
+  where
+    ce1 = checkExpression e1
+    ce2 = checkExpression e2
+checkExpression (UnaryMinus e) = UnaryMinus <$> checkExpression e
+checkExpression (FunctionCall i a) = liftM2 FunctionCall ci ca
+  where
+    ci = checkIdentifier i
+    ca = checkArgumentExprList a
+checkExpression (Ident i) = Ident <$> checkIdentifier i
+checkExpression (Const c) = Const <$> checkConstant c
+checkExpression (Parens e) = Parens <$> checkExpression e
+
+checkArgumentExprList :: ArgumentExprList -> ErrorChecker ArgumentExprList
+checkArgumentExprList (ArgumentExprList e) = ArgumentExprList <$> mapM checkExpression e
 
 checkIdentifier :: Identifier -> ErrorChecker Identifier
 checkIdentifier (Identifier s) = do
@@ -209,3 +272,6 @@ checkIdentifier (Identifier s) = do
   put $ Environment variablesTable functionsTable currentLevel
   tell [s]
   return (Identifier s)
+
+checkConstant :: Constant -> ErrorChecker Constant
+checkConstant = return
