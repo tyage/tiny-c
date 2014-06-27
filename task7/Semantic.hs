@@ -9,6 +9,14 @@ import Data.Maybe
 import Type
 import Show
 
+environmentLevel :: Environment -> Int
+environmentLevel env = tokensTableLevel $ tokensTable env
+
+tokensTableLevel :: TokensTable -> Int
+tokensTableLevel t = case parentTokensTable t of
+  Nothing -> 0
+  Just t -> 1 + (tokensTableLevel t)
+
 setTokensTable :: TokensTable -> ErrorChecker ()
 setTokensTable v = do
   env <- get
@@ -18,11 +26,6 @@ createTokensTable :: ErrorChecker ()
 createTokensTable = do
   env <- get
   setTokensTable $ TokensTable (Just $ tokensTable env) []
-
-setCurrentLevel :: Int -> ErrorChecker ()
-setCurrentLevel i = do
-  env <- get
-  put $ env {environmentLevel = i}
 
 lookupToken :: Identifier -> ErrorChecker (Maybe Token)
 lookupToken i = do
@@ -55,9 +58,7 @@ semanticCheck :: Program -> ErrorChecker Program
 semanticCheck p = checkProgram p
 
 checkProgram :: Program -> ErrorChecker Program
-checkProgram (ExDeclList e) = do
-  setCurrentLevel 0
-  ExDeclList <$> mapM checkExternalDeclaration e
+checkProgram (ExDeclList e) = ExDeclList <$> mapM checkExternalDeclaration e
 
 checkExternalDeclaration :: ExternalDeclaration -> ErrorChecker ExternalDeclaration
 checkExternalDeclaration (Decl d) = Decl <$> checkDeclaration d
@@ -92,7 +93,6 @@ checkFunctionDefinition :: FunctionDefinition -> ErrorChecker FunctionDefinition
 checkFunctionDefinition (FunctionDefinition d p c) = do
   env <- get
   newFunctionDefinition <- liftM3 FunctionDefinition cd cp cc
-  setCurrentLevel 0
   setTokensTable $ tokensTable env
   return newFunctionDefinition
     where
@@ -114,8 +114,6 @@ checkFunctionDeclarator (Declarator i) = do
 
 checkParameterTypeList :: ParameterTypeList -> ErrorChecker ParameterTypeList
 checkParameterTypeList (ParameterTypeList p) = do
-  env <- get
-  setCurrentLevel 1
   createTokensTable
   ParameterTypeList <$> mapM checkParameterDeclaration p
 
@@ -151,10 +149,8 @@ checkStatement (Return e) = Return <$> checkExpression e
 checkCompoundStatement :: CompoundStatement -> ErrorChecker CompoundStatement
 checkCompoundStatement (CompoundStatement d s) = do
   env <- get
-  setCurrentLevel $ (environmentLevel env) + 1
   createTokensTable
   newCompoundStatement <- liftM2 CompoundStatement cd cs
-  setCurrentLevel $ (environmentLevel env)
   setTokensTable $ tokensTable env
   return newCompoundStatement
     where

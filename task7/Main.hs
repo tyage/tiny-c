@@ -20,7 +20,7 @@ run input = case parse program "TinyC" input of
                 programTree = show $ fst $ result
                 errorMessages = concat $ intersperse "\n" $ snd $ result
                 result = fromJust $ runWriterT $ evalStateT (semanticCheck program) initialEnv
-                initialEnv = (Environment (TokensTable Nothing []) 0)
+                initialEnv = (Environment (TokensTable Nothing []))
 
 main :: IO ()
 main = do

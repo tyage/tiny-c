@@ -72,8 +72,7 @@ data Constant = Constant Integer
 type ErrorChecker a = StateT Environment (WriterT [String] Maybe) a
 
 data Environment = Environment {
-  tokensTable :: TokensTable,
-  environmentLevel :: Level
+  tokensTable :: TokensTable
 }
 
 data TokensTable = TokensTable {
