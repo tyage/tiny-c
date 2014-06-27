@@ -30,7 +30,7 @@ createTokensTable = do
 lookupToken :: Identifier -> ErrorChecker (Maybe Token)
 lookupToken i = do
   env <- get
-  return $ lookupTokenInTable i (tokensTable env)
+  return $ lookupTokenInTable i $ tokensTable env
 
 lookupTokenInTable :: Identifier -> TokensTable -> (Maybe Token)
 lookupTokenInTable i table = case lookup i $ tokensList $ table of
