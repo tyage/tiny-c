@@ -13,7 +13,7 @@ import Semantic
 run :: String -> String
 run input = case parse program "TinyC" input of
             Left err -> show err
-            Right program -> show $ execWriterT $ evalStateT (semanticCheck program) initialEnv
+            Right program -> show $ evalStateT (semanticCheck program) initialEnv
               where initialEnv = (Environment (TokensTable Nothing []) 0)
 
 main :: IO ()

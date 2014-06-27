@@ -89,11 +89,14 @@ checkVariableDeclarator (Declarator i) = do
   Declarator <$> checkIdentifier i
 
 checkFunctionDefinition :: FunctionDefinition -> ErrorChecker FunctionDefinition
-checkFunctionDefinition (FunctionDefinition d p c) = liftM3 FunctionDefinition cd cp cc
-  where
-    cd = checkFunctionDeclarator d
-    cp = checkParameterTypeList p
-    cc = checkCompoundStatement c
+checkFunctionDefinition (FunctionDefinition d p c) = do
+  newFunctionDefinition <- liftM3 FunctionDefinition cd cp cc
+  setCurrentLevel 0
+  return newFunctionDefinition
+    where
+      cd = checkFunctionDeclarator d
+      cp = checkParameterTypeList p
+      cc = checkCompoundStatement c
 
 checkFunctionDeclarator:: Declarator -> ErrorChecker Declarator
 checkFunctionDeclarator (Declarator i) = do
@@ -245,7 +248,11 @@ checkArgumentExprList :: ArgumentExprList -> ErrorChecker ArgumentExprList
 checkArgumentExprList (ArgumentExprList e) = ArgumentExprList <$> mapM checkExpression e
 
 checkIdentifier :: Identifier -> ErrorChecker Identifier
-checkIdentifier = return
+checkIdentifier i = do
+  t <- lookupToken i
+  case t of
+    Nothing -> return $ TokenIdentifier FreshToken
+    Just token -> return $ TokenIdentifier token
 
 checkConstant :: Constant -> ErrorChecker Constant
 checkConstant = return

@@ -57,12 +57,15 @@ data Expr = ExprList [Expr]
 data ArgumentExprList = ArgumentExprList [Expr]
 
 data Identifier = Identifier String
+                | TokenIdentifier Token
                 deriving (Eq)
 
 data Token = VariableToken Identifier Level
            | FunctionToken Identifier Level
            | ParameterToken Identifier Level
            | UndefinedFunctionToken Identifier Level
+           | FreshToken
+           deriving (Eq)
 
 data Constant = Constant Integer
 

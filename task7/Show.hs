@@ -74,6 +74,14 @@ instance Show ArgumentExprList where
 
 instance Show Identifier where
   show (Identifier s) = s
+  show (TokenIdentifier t) = show t
+
+instance Show Token where
+  show (VariableToken i l) = show i ++ ":" ++ show l
+  show (FunctionToken i l) = show i ++ ":" ++ show l
+  show (ParameterToken i l) = show i ++ ":" ++ show l
+  show (UndefinedFunctionToken i l) = show i ++ ":" ++ show l
+  show FreshToken = ""
 
 instance Show Constant where
   show (Constant i) = show i
