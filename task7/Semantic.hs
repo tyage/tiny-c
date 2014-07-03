@@ -79,7 +79,7 @@ checkDeclaration (EmptyDeclaration) = return EmptyDeclaration
 checkDeclaratorList :: DeclaratorList -> ErrorChecker DeclaratorList
 checkDeclaratorList (DeclaratorList d) = DeclaratorList <$> mapM checkVariableDeclarator d
 
-checkVariableDeclarator:: Declarator -> ErrorChecker Declarator
+checkVariableDeclarator :: Declarator -> ErrorChecker Declarator
 checkVariableDeclarator (Declarator i) = do
   -- 同一レベルで同名の変数宣言・関数宣言があった場合はエラーを出す
   t <- findToken i
@@ -94,8 +94,17 @@ checkVariableDeclarator (Declarator i) = do
     Just (ParameterToken i l o) -> tell ["declaration of '" ++ show i ++ "' shadows a parameter"]
     _ -> return ()
 
-  putVariableToken i 0
+  env <- get
+  putVariableToken i $ countLocalVariables $ tokensTable env
   Declarator <$> checkIdentifier i
+
+-- levelが2以上のTokenをカウント
+countLocalVariables :: TokensTable -> Int
+countLocalVariables table = let localVarCount = length $ tokensList table
+  in if (tokensTableLevel table <= 1) then 0 else
+    case parentTokensTable table of
+      Nothing -> localVarCount
+      Just p -> countLocalVariables p + localVarCount
 
 checkFunctionDefinition :: FunctionDefinition -> ErrorChecker FunctionDefinition
 checkFunctionDefinition (FunctionDefinition d p c) = do
@@ -126,11 +135,11 @@ checkParameterTypeList (ParameterTypeList p) = do
   createTokensTable
   ParameterTypeList <$> (mapM checkParameterDeclaration $ zip [0..] p)
 
-checkParameterDeclaration:: (Integer, ParameterDeclaration) -> ErrorChecker ParameterDeclaration
+checkParameterDeclaration:: (Int, ParameterDeclaration) -> ErrorChecker ParameterDeclaration
 checkParameterDeclaration (offset, ParameterDeclaration d) = ParameterDeclaration <$>
   checkParameterDeclarator offset d
 
-checkParameterDeclarator:: Integer -> Declarator -> ErrorChecker Declarator
+checkParameterDeclarator:: Int -> Declarator -> ErrorChecker Declarator
 checkParameterDeclarator offset (Declarator i) = do
   -- 同一レベルで同名のパラメータ宣言があった場合はエラーを出す
   t <- findToken i
