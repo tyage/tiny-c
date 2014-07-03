@@ -105,12 +105,12 @@ checkFunctionDefinition (FunctionDefinition d p c) = do
   setTokensTable $ fromJust $ parentTokensTable $ tokensTable env
   return newFunctionDefinition
     where
-      cd = checkFunctionDeclarator d
+      cd = checkFunctionDeclarator d p
       cp = checkParameterTypeList p
       cc = checkCompoundStatement c
 
-checkFunctionDeclarator:: Declarator -> ErrorChecker Declarator
-checkFunctionDeclarator (Declarator i) = do
+checkFunctionDeclarator:: Declarator -> ParameterTypeList -> ErrorChecker Declarator
+checkFunctionDeclarator (Declarator i) (ParameterTypeList p) = do
   -- 同一レベルで同名の変数宣言があった場合はエラーを出す
   t <- findToken i
   case t of
@@ -118,7 +118,7 @@ checkFunctionDeclarator (Declarator i) = do
     Just (FunctionToken i l p) -> tell ["redefinition of '" ++ show i ++ "'"]
     _ -> return ()
 
-  putFunctionToken i 0
+  putFunctionToken i $ length p
   Declarator <$> checkIdentifier i
 
 checkParameterTypeList :: ParameterTypeList -> ErrorChecker ParameterTypeList
