@@ -15,12 +15,18 @@ import Semantic
 run :: String -> String
 run input = case parse program "TinyC" input of
             Left err -> show err
-            Right program -> errorMessages ++ "\n" ++ programTree
-              where
-                programTree = show $ fst $ result
-                errorMessages = concat $ intersperse "\n" $ map show $ snd $ result
-                result = fromJust $ runWriterT $ evalStateT (semanticCheck program) initialEnv
-                initialEnv = (Environment (TokensTable Nothing []))
+            Right program -> if (isNothing errorFound) then
+              errorMessages ++ "\n" ++ programTree else errorMessages
+                where
+                  programTree = show $ fst $ result
+                  errorMessages = concat $ intersperse "\n" $ map show $ snd $ result
+                  errorFound = find isError $ snd result
+                  result = fromJust $ runWriterT $ evalStateT (semanticCheck program) initialEnv
+                  initialEnv = (Environment (TokensTable Nothing []))
+
+isError :: ErrorMessage -> Bool
+isError (ErrorMessage e) = True
+isError (WarningMessage w) = False
 
 main :: IO ()
 main = do
