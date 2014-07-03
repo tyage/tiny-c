@@ -229,17 +229,22 @@ checkExpression (Divide e1 e2) = liftM2 Divide ce1 ce2
 checkExpression (UnaryMinus e) = UnaryMinus <$> checkExpression e
 checkExpression (FunctionCall i a) = do
   -- 関数が参照できない場合は警告、変数・パラメータの場合はエラー
+  -- 関数が参照できた場合、引数の数が異なっていればエラー
   t <- lookupToken i
   case t of
     Just (VariableToken i l o) -> tell ["variable '" ++ show i ++ "' is used as function"]
     Just (ParameterToken i l o) -> tell ["variable '" ++ show i ++ "' is used as function"]
     Nothing -> tell ["'" ++ show i ++ "' undeclared function"]
+    Just (FunctionToken i l p) -> when (p /= argumentLength a) $
+      tell ["parameter length does not match to function " ++ show i ++
+        " (expected " ++ show p ++ " but actually " ++ (show $ argumentLength a) ++ ")"]
     _ -> return ()
 
   liftM2 FunctionCall ci ca
     where
       ci = checkIdentifier i
       ca = checkArgumentExprList a
+      argumentLength (ArgumentExprList a) = length a
 checkExpression (Ident i) = do
   -- 変数が参照できない場合・関数である場合はエラー
   t <- lookupToken i
