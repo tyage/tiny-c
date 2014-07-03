@@ -124,20 +124,21 @@ checkFunctionDeclarator (Declarator i) (ParameterTypeList p) = do
 checkParameterTypeList :: ParameterTypeList -> ErrorChecker ParameterTypeList
 checkParameterTypeList (ParameterTypeList p) = do
   createTokensTable
-  ParameterTypeList <$> mapM checkParameterDeclaration p
+  ParameterTypeList <$> (mapM checkParameterDeclaration $ zip [0..] p)
 
-checkParameterDeclaration:: ParameterDeclaration -> ErrorChecker ParameterDeclaration
-checkParameterDeclaration (ParameterDeclaration d) = ParameterDeclaration <$> checkParameterDeclarator d
+checkParameterDeclaration:: (Integer, ParameterDeclaration) -> ErrorChecker ParameterDeclaration
+checkParameterDeclaration (offset, ParameterDeclaration d) = ParameterDeclaration <$>
+  checkParameterDeclarator offset d
 
-checkParameterDeclarator:: Declarator -> ErrorChecker Declarator
-checkParameterDeclarator (Declarator i) = do
+checkParameterDeclarator:: Integer -> Declarator -> ErrorChecker Declarator
+checkParameterDeclarator offset (Declarator i) = do
   -- 同一レベルで同名のパラメータ宣言があった場合はエラーを出す
   t <- findToken i
   case t of
     Just (ParameterToken i l o) -> tell ["redeclaration of '" ++ show i ++ "'"]
     _ -> return ()
 
-  putParameterToken i 0
+  putParameterToken i offset
   Declarator <$> checkIdentifier i
 
 checkStatement :: Statement -> ErrorChecker Statement

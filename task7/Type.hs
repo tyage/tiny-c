@@ -66,7 +66,7 @@ data Token = VariableToken Identifier Level Offset
            | FreshToken
            deriving (Eq)
 
-type Offset = Int
+type Offset = Integer
 
 type ParameterLength = Int
 

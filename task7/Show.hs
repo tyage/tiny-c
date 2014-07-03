@@ -78,7 +78,7 @@ instance Show Identifier where
 
 instance Show Token where
   show (VariableToken i l o) = show i ++ ":" ++ show l ++ ":" ++ show o
-  show (ParameterToken i l o) = show i ++ ":" ++ show l ++ ":" ++ show o
+  show (ParameterToken i l o) = show i ++ ":" ++ show l ++ ":" ++ show (o * 4 + 8)
   show (FunctionToken i l p) = show i ++ ":" ++ show l
   show FreshToken = ""
 
