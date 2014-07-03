@@ -18,7 +18,7 @@ run input = case parse program "TinyC" input of
             Right program -> errorMessages ++ "\n" ++ programTree
               where
                 programTree = show $ fst $ result
-                errorMessages = concat $ intersperse "\n" $ snd $ result
+                errorMessages = concat $ intersperse "\n" $ map show $ snd $ result
                 result = fromJust $ runWriterT $ evalStateT (semanticCheck program) initialEnv
                 initialEnv = (Environment (TokensTable Nothing []))
 

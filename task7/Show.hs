@@ -84,3 +84,7 @@ instance Show Token where
 
 instance Show Constant where
   show (Constant i) = show i
+
+instance Show ErrorMessage where
+  show (ErrorMessage s) = "error: " ++ s
+  show (WarningMessage s) = "warning: " ++ s

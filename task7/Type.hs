@@ -72,7 +72,10 @@ type ParameterLength = Int
 
 data Constant = Constant Integer
 
-type ErrorChecker a = StateT Environment (WriterT [String] Maybe) a
+type ErrorChecker a = StateT Environment (WriterT [ErrorMessage] Maybe) a
+
+data ErrorMessage = ErrorMessage String
+                  | WarningMessage String
 
 data Environment = Environment {
   tokensTable :: TokensTable

@@ -84,14 +84,14 @@ checkVariableDeclarator (Declarator i) = do
   -- 同一レベルで同名の変数宣言・関数宣言があった場合はエラーを出す
   t <- findToken i
   case t of
-    Just (VariableToken i l o) -> tell ["redeclaration of '" ++ show i ++ "'"]
-    Just (FunctionToken i l p) -> tell ["'" ++ show i ++ "' redeclarated as different kind of symbol"]
+    Just (VariableToken i l o) -> tell [ErrorMessage $ "redeclaration of '" ++ show i ++ "'"]
+    Just (FunctionToken i l p) -> tell [ErrorMessage $ "'" ++ show i ++ "' redeclarated as different kind of symbol"]
     _ -> return ()
 
   -- lookupして、paramter宣言があった場合は警告を出す
   t <- lookupToken i
   case t of
-    Just (ParameterToken i l o) -> tell ["declaration of '" ++ show i ++ "' shadows a parameter"]
+    Just (ParameterToken i l o) -> tell [WarningMessage $ "declaration of '" ++ show i ++ "' shadows a parameter"]
     _ -> return ()
 
   env <- get
@@ -123,8 +123,8 @@ checkFunctionDeclarator (Declarator i) (ParameterTypeList p) = do
   -- 同一レベルで同名の変数宣言があった場合はエラーを出す
   t <- findToken i
   case t of
-    Just (VariableToken i l o) -> tell ["'" ++ show i ++ "' redeclarated as different kind of symbol"]
-    Just (FunctionToken i l p) -> tell ["redefinition of '" ++ show i ++ "'"]
+    Just (VariableToken i l o) -> tell [ErrorMessage $ "'" ++ show i ++ "' redeclarated as different kind of symbol"]
+    Just (FunctionToken i l p) -> tell [ErrorMessage $ "redefinition of '" ++ show i ++ "'"]
     _ -> return ()
 
   putFunctionToken i $ length p
@@ -144,7 +144,7 @@ checkParameterDeclarator offset (Declarator i) = do
   -- 同一レベルで同名のパラメータ宣言があった場合はエラーを出す
   t <- findToken i
   case t of
-    Just (ParameterToken i l o) -> tell ["redeclaration of '" ++ show i ++ "'"]
+    Just (ParameterToken i l o) -> tell [ErrorMessage $ "redeclaration of '" ++ show i ++ "'"]
     _ -> return ()
 
   putParameterToken i offset
@@ -242,11 +242,11 @@ checkExpression (FunctionCall i a) = do
   -- 関数が参照できた場合、引数の数が異なっていればエラー
   t <- lookupToken i
   case t of
-    Just (VariableToken i l o) -> tell ["variable '" ++ show i ++ "' is used as function"]
-    Just (ParameterToken i l o) -> tell ["variable '" ++ show i ++ "' is used as function"]
-    Nothing -> tell ["'" ++ show i ++ "' undeclared function"]
+    Just (VariableToken i l o) -> tell [ErrorMessage $ "variable '" ++ show i ++ "' is used as function"]
+    Just (ParameterToken i l o) -> tell [ErrorMessage $ "variable '" ++ show i ++ "' is used as function"]
+    Nothing -> tell [ErrorMessage $ "'" ++ show i ++ "' undeclared function"]
     Just (FunctionToken i l p) -> when (p /= argumentLength a) $
-      tell ["parameter length does not match to function " ++ show i ++
+      tell [ErrorMessage $ "parameter length does not match to function " ++ show i ++
         " (expected " ++ show p ++ " but actually " ++ (show $ argumentLength a) ++ ")"]
     _ -> return ()
 
@@ -259,8 +259,8 @@ checkExpression (Ident i) = do
   -- 変数が参照できない場合・関数である場合はエラー
   t <- lookupToken i
   case t of
-    Just (FunctionToken i l p) -> tell ["function '" ++ show i ++ "' is used as variable"]
-    Nothing -> tell ["'" ++ show i ++ "' undeclared variable"]
+    Just (FunctionToken i l p) -> tell [ErrorMessage $ "function '" ++ show i ++ "' is used as variable"]
+    Nothing -> tell [ErrorMessage $ "'" ++ show i ++ "' undeclared variable"]
     _ -> return ()
 
   Ident <$> checkIdentifier i
