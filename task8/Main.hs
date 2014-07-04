@@ -11,14 +11,18 @@ import Type
 import Parser
 import Show
 import Semantic
+import Asm
 
 compile :: String -> String -> IO ()
 compile filename input = case parse program "TinyC" input of
-  Left err -> print err
+  Left err -> putStrLn $ show err
   Right program -> do
-    when (isNothing errorFound) (writeFile filename "a")
-    print errorMessages
+    putStrLn $ show errorMessages
+    when (isNothing errorFound) (writeFile filename asm)
+    -- XXX デバッグ用に一時的に標準出力に出す
+    putStrLn asm
       where
+        asm = concat $ concat $ map (\ x -> x ++ ["\n"]) $ map (intersperse "\t") $ asmProgram programTree
         programTree = fst $ result
         errorMessages = concat $ intersperse "\n" $ map show $ snd $ result
         errorFound = find isError $ snd result
