@@ -12,17 +12,18 @@ import Parser
 import Show
 import Semantic
 
-run :: String -> String
-run input = case parse program "TinyC" input of
-            Left err -> show err
-            Right program -> if (isNothing errorFound) then
-              errorMessages ++ "\n" ++ programTree else errorMessages
-                where
-                  programTree = show $ fst $ result
-                  errorMessages = concat $ intersperse "\n" $ map show $ snd $ result
-                  errorFound = find isError $ snd result
-                  result = fromJust $ runWriterT $ evalStateT (semanticCheck program) initialEnv
-                  initialEnv = (Environment (TokensTable Nothing []))
+compile :: String -> String -> IO ()
+compile filename input = case parse program "TinyC" input of
+  Left err -> print err
+  Right program -> do
+    when (isNothing errorFound) (writeFile filename "a")
+    print errorMessages
+      where
+        programTree = fst $ result
+        errorMessages = concat $ intersperse "\n" $ map show $ snd $ result
+        errorFound = find isError $ snd result
+        result = fromJust $ runWriterT $ evalStateT (semanticCheck program) initialEnv
+        initialEnv = (Environment (TokensTable Nothing []))
 
 isError :: ErrorMessage -> Bool
 isError (ErrorMessage e) = True
@@ -32,4 +33,4 @@ main :: IO ()
 main = do
   input <- getArgs
   file <- readFile (head input)
-  putStrLn (run file)
+  compile "sample.asm" file
