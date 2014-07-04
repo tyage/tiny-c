@@ -25,7 +25,7 @@ instance Show Constant where
 instance Show AsmCode where
   show (AsmGlobal l) = "GLOBAL\t" ++ l
   show (AsmLabel l) = l ++ ":"
-  show (AsmCommon l) = "COMMON\t" ++ l
+  show (AsmCommon l b) = "COMMON\t" ++ l ++ show b
   show (AsmOp o) = show o
 
 instance Show Op where
@@ -39,6 +39,9 @@ showRegister (TokenIdentifier t) = showTokenRegister t
 showTokenRegister :: Token -> String
 showTokenRegister (VariableToken i l o) = "[ebp" ++ appendPlus (o * (-4) - 4) ++ "]"
 showTokenRegister (ParameterToken i l o) = "[ebp" ++ appendPlus (o * 4 + 8) ++ "]"
+
+showGlobal :: Identifier -> String
+showGlobal (TokenIdentifier t) = "_" ++ show t
 
 appendPlus :: Int -> String
 appendPlus i = if (i > 0) then "+" ++ show i else show i

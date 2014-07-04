@@ -94,11 +94,13 @@ type Asm = [AsmCode]
 
 data AsmCode = AsmGlobal Label
              | AsmLabel Label
-             | AsmCommon Label
+             | AsmCommon Label Bytes
              | AsmOp Op
+
+type Label = String
+
+type Bytes = Int
 
 data Op = Op0 String
         | Op1 String String
         | Op2 String String String
-
-type Label = String

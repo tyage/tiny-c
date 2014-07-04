@@ -14,8 +14,8 @@ asmExternalDeclaration (FuncDef f) = asmFunctionDefinition f
 
 asmFunctionDefinition :: FunctionDefinition -> Asm
 asmFunctionDefinition (FunctionDefinition d p c) = [
-    AsmGlobal $ show d,
-    AsmLabel $ show d,
+    AsmGlobal $ showGlobal identifier,
+    AsmLabel $ showGlobal identifier,
     AsmOp $ Op1 "push" "ebp",
     AsmOp $ Op2 "mov" "ebp" "esp",
     -- XXX 局所変数の最大値を本来は計算するべき
@@ -27,6 +27,9 @@ asmFunctionDefinition (FunctionDefinition d p c) = [
     AsmOp $ Op1 "pop" "ebp",
     AsmOp $ Op0 "ret"
   ]
+  where
+    identifier = dec2ident d
+    dec2ident (Declarator i) = i
 
 asmGlobalDeclaration :: Declaration -> Asm
 asmGlobalDeclaration (Declaration d) = concat $ map asmGlobalDeclarator $ declList d
@@ -34,7 +37,7 @@ asmGlobalDeclaration (Declaration d) = concat $ map asmGlobalDeclarator $ declLi
     declList (DeclaratorList d) = d
 
 asmGlobalDeclarator :: Declarator -> Asm
-asmGlobalDeclarator (Declarator i) = [AsmCommon $ show i]
+asmGlobalDeclarator (Declarator i) = [AsmCommon (show i) 4]
 
 asmCompoundStatement :: CompoundStatement -> Asm
 asmCompoundStatement (CompoundStatement d s) = case s of
