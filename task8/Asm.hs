@@ -80,12 +80,19 @@ asmExpression (Lt e1 e2) = []
 asmExpression (Gt e1 e2) = []
 asmExpression (Le e1 e2) = []
 asmExpression (Ge e1 e2) = []
-asmExpression (Plus e1 e2) = []
-asmExpression (Minus e1 e2) = []
-asmExpression (Multiple e1 e2) = []
-asmExpression (Divide e1 e2) = []
+asmExpression (Plus e1 e2) = asmArithmetic e1 e2 "add"
+asmExpression (Minus e1 e2) = asmArithmetic e1 e2 "sub"
+asmExpression (Multiple e1 e2) = asmArithmetic e1 e2 "imul"
+asmExpression (Divide e1 e2) = asmArithmetic e1 e2 "idiv\tdword"
 asmExpression (UnaryMinus e) = []
 asmExpression (FunctionCall i a) = []
 asmExpression (Ident i) = []
 asmExpression (Const c) = [AsmOp $ Op2 "mov" "eax" $ show c]
 asmExpression (Parens e) = []
+
+asmArithmetic :: Expr -> Expr -> String -> Asm
+asmArithmetic e1 e2 op = asmRSL e1 e2 ++ [AsmOp $ Op2 op "eax" "ebx"]
+
+asmRSL :: Expr -> Expr -> Asm
+asmRSL e1 e2 = asmExpression e2 ++ [AsmOp $ Op1 "push" "eax"] ++
+  asmExpression e1 ++ [AsmOp $ Op1 "pop" "ebx"]
