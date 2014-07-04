@@ -3,7 +3,6 @@ module Asm where
 import Data.List
 
 import Type
-import Show
 
 type Asm = [AsmCode]
 
@@ -29,6 +28,29 @@ instance Show Op where
   show (Op1 op arg1) = op ++ "\t" ++ arg1
   show (Op2 op arg1 arg2) = op ++ "\t" ++ arg1 ++ ", " ++ arg2
 
+instance Show Declarator where
+  show (Declarator i) = show i
+
+instance Show Identifier where
+  show (Identifier s) = s
+  show (TokenIdentifier t) = show t
+
+instance Show Token where
+  show (VariableToken i l o) = show i
+  show (ParameterToken i l o) = show i
+  show (FunctionToken i l p) = show i
+  show FreshToken = ""
+
+instance Show Constant where
+  show (Constant i) = show i
+
+showRegister :: Identifier -> String
+showRegister (TokenIdentifier t) = showTokenRegister t
+
+showTokenRegister :: Token -> String
+showTokenRegister (VariableToken i l o) = "[ebp" ++ show (o * (-4) - 4) ++ "]"
+showTokenRegister (ParameterToken i l o) = "[ebp" ++ show (o * 4 + 8) ++ "]"
+
 asmProgram :: Program -> Asm
 asmProgram (ExDeclList e) = concat $ map asmExternalDeclaration e
 
@@ -53,7 +75,12 @@ asmFunctionDefinition (FunctionDefinition d p c) = [
   ]
 
 asmGlobalDeclaration :: Declaration -> Asm
-asmGlobalDeclaration (Declaration d) = [AsmCommon $ show d]
+asmGlobalDeclaration (Declaration d) = concat $ map asmGlobalDeclarator $ declList d
+  where
+    declList (DeclaratorList d) = d
+
+asmGlobalDeclarator :: Declarator -> Asm
+asmGlobalDeclarator (Declarator i) = [AsmCommon $ show i]
 
 asmCompoundStatement :: CompoundStatement -> Asm
 asmCompoundStatement (CompoundStatement d s) = case s of
@@ -80,7 +107,7 @@ asmStatement (Return e) = asmExpression e ++ [
 
 asmExpression :: Expr -> Asm
 asmExpression (ExprList e) = concat $ map asmExpression e
-asmExpression (Assign i e) = asmExpression e ++ [AsmOp $ Op2 "mov" (show i) "eax"]
+asmExpression (Assign i e) = asmExpression e ++ [AsmOp $ Op2 "mov" (showRegister i) "eax"]
 -- XXX jump先ラベルを生成しろ！
 asmExpression (Or e1 e2) = [AsmOp $ Op1 "push" "1"] ++ asmExpression e1 ++
   [AsmOp $ Op2 "cmp" "eax" "1", AsmOp $ Op1 "je" "L"] ++ asmExpression e2 ++
@@ -108,7 +135,7 @@ asmExpression (FunctionCall i a) = asmArgumentList a ++ [AsmOp $ Op1 "call" $ sh
   AsmOp $ Op2 "add" "esp" $ show $ 4 * (argLength a)]
     where
       argLength (ArgumentExprList e) = length e
-asmExpression (Ident i) = [AsmOp $ Op2 "mov" "eax" $ show i]
+asmExpression (Ident i) = [AsmOp $ Op2 "mov" "eax" $ showRegister i]
 asmExpression (Const c) = [AsmOp $ Op2 "mov" "eax" $ show c]
 asmExpression (Parens e) = asmExpression e
 
