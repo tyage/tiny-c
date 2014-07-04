@@ -42,8 +42,11 @@ asmFunctionDefinition (FunctionDefinition d p c) = [
     AsmLabel $ show d,
     AsmOp $ Op1 "push" "ebp",
     AsmOp $ Op2 "mov" "ebp" "esp",
+    -- XXX 局所変数の最大値を本来は計算するべき
     AsmOp $ Op2 "sub" "esp" "128"
-  ] ++ (asmFunctionBody p c) ++ [
+  ] ++ (asmCompoundStatement c) ++ [
+    -- XXX return用のlabel名を {funcName}ret としているが、一意にならない可能性があるので連番にしたほうがよい
+    AsmLabel $ show d ++ "ret",
     AsmOp $ Op2 "mov" "esp" "ebp",
     AsmOp $ Op1 "pop" "ebp",
     AsmOp $ Op0 "ret"
@@ -54,5 +57,35 @@ asmGlobalDeclaration (Declaration d) = [
     AsmCommon $ show d
   ]
 
-asmFunctionBody :: ParameterTypeList -> CompoundStatement -> Asm
-asmFunctionBody p c = []
+asmCompoundStatement :: CompoundStatement -> Asm
+asmCompoundStatement (CompoundStatement d s) = case s of
+  (StatementList s) -> concat $ map asmStatement s
+
+asmStatement :: Statement -> Asm
+asmStatement EmptyStatement = []
+asmStatement (ExpressionStmt e) = asmExpression e
+asmStatement (CompoundStmt c) = asmCompoundStatement c
+asmStatement (If e s1 s2) = []
+asmStatement (While e s) = []
+asmStatement (Return e) = []
+
+asmExpression :: Expr -> Asm
+asmExpression (ExprList e) = concat $ map asmExpression e
+asmExpression (Assign i e) = []
+asmExpression (Or e1 e2) = []
+asmExpression (And e1 e2) = []
+asmExpression (Equal e1 e2) = []
+asmExpression (NotEqual e1 e2) = []
+asmExpression (Lt e1 e2) = []
+asmExpression (Gt e1 e2) = []
+asmExpression (Le e1 e2) = []
+asmExpression (Ge e1 e2) = []
+asmExpression (Plus e1 e2) = []
+asmExpression (Minus e1 e2) = []
+asmExpression (Multiple e1 e2) = []
+asmExpression (Divide e1 e2) = []
+asmExpression (UnaryMinus e) = []
+asmExpression (FunctionCall i a) = []
+asmExpression (Ident i) = []
+asmExpression (Const c) = [AsmOp $ Op2 "mov" "eax" $ show c]
+asmExpression (Parens e) = []
