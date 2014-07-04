@@ -87,3 +87,18 @@ data TokensTable = TokensTable {
 }
 
 type Level = Int
+
+-- Asm
+
+type Asm = [AsmCode]
+
+data AsmCode = AsmGlobal Label
+             | AsmLabel Label
+             | AsmCommon Label
+             | AsmOp Op
+
+data Op = Op0 String
+        | Op1 String String
+        | Op2 String String String
+
+type Label = String
