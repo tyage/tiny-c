@@ -74,12 +74,12 @@ asmExpression (ExprList e) = concat $ map asmExpression e
 asmExpression (Assign i e) = []
 asmExpression (Or e1 e2) = []
 asmExpression (And e1 e2) = []
-asmExpression (Equal e1 e2) = []
-asmExpression (NotEqual e1 e2) = []
-asmExpression (Lt e1 e2) = []
-asmExpression (Gt e1 e2) = []
-asmExpression (Le e1 e2) = []
-asmExpression (Ge e1 e2) = []
+asmExpression (Equal e1 e2) = asmCompare e1 e2 "sete"
+asmExpression (NotEqual e1 e2) = asmCompare e1 e2 "setne"
+asmExpression (Lt e1 e2) = asmCompare e1 e2 "setl"
+asmExpression (Gt e1 e2) = asmCompare e1 e2 "setg"
+asmExpression (Le e1 e2) = asmCompare e1 e2 "setle"
+asmExpression (Ge e1 e2) = asmCompare e1 e2 "setge"
 asmExpression (Plus e1 e2) = asmArithmetic e1 e2 "add"
 asmExpression (Minus e1 e2) = asmArithmetic e1 e2 "sub"
 asmExpression (Multiple e1 e2) = asmArithmetic e1 e2 "imul"
@@ -89,6 +89,10 @@ asmExpression (FunctionCall i a) = []
 asmExpression (Ident i) = []
 asmExpression (Const c) = [AsmOp $ Op2 "mov" "eax" $ show c]
 asmExpression (Parens e) = []
+
+asmCompare :: Expr -> Expr -> String -> Asm
+asmCompare e1 e2 op = asmRSL e1 e2 ++ [AsmOp $ Op2 "cmp" "eax" "ebx",
+  AsmOp $ Op1 op "al", AsmOp $ Op2 "movzx" "eax" "al"]
 
 asmArithmetic :: Expr -> Expr -> String -> Asm
 asmArithmetic e1 e2 op = asmRSL e1 e2 ++ [AsmOp $ Op2 op "eax" "ebx"]
