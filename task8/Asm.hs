@@ -63,11 +63,14 @@ asmStatement :: Statement -> Asm
 asmStatement EmptyStatement = []
 asmStatement (ExpressionStmt e) = asmExpression e
 asmStatement (CompoundStmt c) = asmCompoundStatement c
--- XXX jump先unique値はstateモナドで取ってくる
+-- XXX jump先ラベルを生成しろ！
 asmStatement (If e s1 s2) = asmExpression e ++ [AsmOp $ Op2 "cmp" "eax" "1",
   AsmOp $ Op1 "je" "L1", AsmOp $ Op1 "jmp" "L2", AsmLabel "L1"] ++
   asmStatement s1 ++ [AsmLabel "L2"] ++ asmStatement s2
-asmStatement (While e s) = []
+-- XXX jump先ラベルを生成しろ！
+asmStatement (While e s) = [AsmLabel "BeginWhile"] ++ asmExpression e ++
+  [AsmOp $ Op2 "cmp" "eax" "0", AsmOp $ Op1 "je" "EndWhile"] ++ asmStatement s ++
+  [AsmOp $ Op1 "jmp" "BeginWhile", AsmLabel "EndWhile"]
 -- XXX retラベルにジャンプしろ！
 asmStatement (Return e) = asmExpression e ++ [
     AsmOp $ Op2 "mov" "esp" "ebp",
@@ -78,12 +81,13 @@ asmStatement (Return e) = asmExpression e ++ [
 asmExpression :: Expr -> Asm
 asmExpression (ExprList e) = concat $ map asmExpression e
 asmExpression (Assign i e) = asmExpression e ++ [AsmOp $ Op2 "mov" (show i) "eax"]
--- XXX jump先unique値はstateモナドで取ってくる
+-- XXX jump先ラベルを生成しろ！
 asmExpression (Or e1 e2) = [AsmOp $ Op1 "push" "1"] ++ asmExpression e1 ++
   [AsmOp $ Op2 "cmp" "eax" "1", AsmOp $ Op1 "je" "L"] ++ asmExpression e2 ++
   [AsmOp $ Op2 "cmp" "eax" "1", AsmOp $ Op1 "je" "L",
     AsmOp $ Op1 "pop" "eax", AsmOp $ Op1 "push" "0",
     AsmLabel "L", AsmOp $ Op1 "pop" "eax"]
+-- XXX jump先ラベルを生成しろ！
 asmExpression (And e1 e2) = [AsmOp $ Op1 "push" "0"] ++ asmExpression e1 ++
   [AsmOp $ Op2 "cmp" "eax" "0", AsmOp $ Op1 "je" "L"] ++ asmExpression e2 ++
   [AsmOp $ Op2 "cmp" "eax" "0", AsmOp $ Op1 "je" "L",
