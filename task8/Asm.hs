@@ -71,7 +71,7 @@ asmStatement (Return e) = []
 
 asmExpression :: Expr -> Asm
 asmExpression (ExprList e) = concat $ map asmExpression e
-asmExpression (Assign i e) = []
+asmExpression (Assign i e) = asmExpression e ++ [AsmOp $ Op2 "mov" (show i) "eax"]
 asmExpression (Or e1 e2) = []
 asmExpression (And e1 e2) = []
 asmExpression (Equal e1 e2) = asmCompare e1 e2 "sete"
@@ -84,7 +84,7 @@ asmExpression (Plus e1 e2) = asmArithmetic e1 e2 "add"
 asmExpression (Minus e1 e2) = asmArithmetic e1 e2 "sub"
 asmExpression (Multiple e1 e2) = asmArithmetic e1 e2 "imul"
 asmExpression (Divide e1 e2) = asmArithmetic e1 e2 "idiv\tdword"
-asmExpression (UnaryMinus e) = []
+asmExpression (UnaryMinus e) = asmExpression e ++ [AsmOp $ Op2 "imul" "eax" "-1"]
 asmExpression (FunctionCall i a) = []
 asmExpression (Ident i) = []
 asmExpression (Const c) = [AsmOp $ Op2 "mov" "eax" $ show c]
