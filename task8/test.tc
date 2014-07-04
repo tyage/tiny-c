@@ -1,7 +1,6 @@
 int z;
 int foo(int x) {
   int y;
-  int x;
   y = x * x;
   return y + 2;
 }
