@@ -53,9 +53,7 @@ asmFunctionDefinition (FunctionDefinition d p c) = [
   ]
 
 asmGlobalDeclaration :: Declaration -> Asm
-asmGlobalDeclaration (Declaration d) = [
-    AsmCommon $ show d
-  ]
+asmGlobalDeclaration (Declaration d) = [AsmCommon $ show d]
 
 asmCompoundStatement :: CompoundStatement -> Asm
 asmCompoundStatement (CompoundStatement d s) = case s of
@@ -67,7 +65,11 @@ asmStatement (ExpressionStmt e) = asmExpression e
 asmStatement (CompoundStmt c) = asmCompoundStatement c
 asmStatement (If e s1 s2) = []
 asmStatement (While e s) = []
-asmStatement (Return e) = []
+asmStatement (Return e) = asmExpression e ++ [
+  AsmOp $ Op2 "mov" "esp" "ebp",
+  AsmOp $ Op1 "pop" "ebp",
+  AsmOp $ Op0 "ret"
+]
 
 asmExpression :: Expr -> Asm
 asmExpression (ExprList e) = concat $ map asmExpression e
@@ -85,10 +87,19 @@ asmExpression (Minus e1 e2) = asmArithmetic e1 e2 "sub"
 asmExpression (Multiple e1 e2) = asmArithmetic e1 e2 "imul"
 asmExpression (Divide e1 e2) = asmArithmetic e1 e2 "idiv\tdword"
 asmExpression (UnaryMinus e) = asmExpression e ++ [AsmOp $ Op2 "imul" "eax" "-1"]
-asmExpression (FunctionCall i a) = []
-asmExpression (Ident i) = []
+asmExpression (FunctionCall i a) = asmArgumentList a ++ [AsmOp $ Op1 "call" $ show i,
+  AsmOp $ Op2 "add" "esp" $ show $ 4 * (argLength a)]
+    where
+      argLength (ArgumentExprList e) = length e
+asmExpression (Ident i) = [AsmOp $ Op2 "mov" "eax" $ show i]
 asmExpression (Const c) = [AsmOp $ Op2 "mov" "eax" $ show c]
-asmExpression (Parens e) = []
+asmExpression (Parens e) = asmExpression e
+
+asmArgumentList :: ArgumentExprList -> Asm
+asmArgumentList (ArgumentExprList a) = concat $ map asmArgument a
+
+asmArgument :: Expr -> Asm
+asmArgument e = asmExpression e ++ [AsmOp $ Op1 "push" "eax"]
 
 asmCompare :: Expr -> Expr -> String -> Asm
 asmCompare e1 e2 op = asmRSL e1 e2 ++ [AsmOp $ Op2 "cmp" "eax" "ebx",
