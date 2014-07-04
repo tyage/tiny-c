@@ -37,5 +37,8 @@ showRegister :: Identifier -> String
 showRegister (TokenIdentifier t) = showTokenRegister t
 
 showTokenRegister :: Token -> String
-showTokenRegister (VariableToken i l o) = "[ebp" ++ show (o * (-4) - 4) ++ "]"
-showTokenRegister (ParameterToken i l o) = "[ebp" ++ show (o * 4 + 8) ++ "]"
+showTokenRegister (VariableToken i l o) = "[ebp" ++ appendPlus (o * (-4) - 4) ++ "]"
+showTokenRegister (ParameterToken i l o) = "[ebp" ++ appendPlus (o * 4 + 8) ++ "]"
+
+appendPlus :: Int -> String
+appendPlus i = if (i > 0) then "+" ++ show i else show i
