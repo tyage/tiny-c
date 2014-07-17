@@ -7,6 +7,12 @@ import Control.Monad.State
 import Type
 import Show
 
+genAsmLabel :: State AsmEnvironment Label
+genAsmLabel = do
+  label <- get
+  put $ label + 1
+  return $ "L" ++ show label
+
 asmProgram :: Program -> Asm
 asmProgram (ExDeclList e) = concat <$> mapM asmExternalDeclaration e
 
@@ -17,16 +23,17 @@ asmExternalDeclaration (FuncDef f) = asmFunctionDefinition f
 asmFunctionDefinition :: FunctionDefinition -> Asm
 asmFunctionDefinition (FunctionDefinition d p c) = do
   acs <- asmCompoundStatement c
+  retLabel <- genAsmLabel
   return $ [
       AsmGlobal $ showGlobal identifier,
+      -- XXX genAsmLabelにする
       AsmLabel $ showGlobal identifier,
       AsmOp $ Op1 "push" "ebp",
       AsmOp $ Op2 "mov" "ebp" "esp",
       -- XXX 局所変数の最大値を本来は計算するべき
       AsmOp $ Op2 "sub" "esp" "128"
     ] ++ acs ++ [
-      -- XXX return用のlabel名を {funcName}ret としているが、一意にならない可能性があるので連番にしたほうがよい
-      AsmLabel $ show d ++ "ret",
+      AsmLabel $ retLabel,
       AsmOp $ Op2 "mov" "esp" "ebp",
       AsmOp $ Op1 "pop" "ebp",
       AsmOp $ Op0 "ret"
@@ -51,21 +58,23 @@ asmStatement :: Statement -> Asm
 asmStatement EmptyStatement = return []
 asmStatement (ExpressionStmt e) = asmExpression e
 asmStatement (CompoundStmt c) = asmCompoundStatement c
--- XXX jump先ラベルを生成しろ！
 asmStatement (If e s1 s2) = do
   ae <- asmExpression e
   as1 <- asmStatement s1
   as2 <- asmStatement s2
+  ifLabel <- genAsmLabel
+  elseLabel <- genAsmLabel
   return $ ae ++ [AsmOp $ Op2 "cmp" "eax" "1",
-    AsmOp $ Op1 "je" "L1", AsmOp $ Op1 "jmp" "L2", AsmLabel "L1"] ++
-    as1 ++ [AsmLabel "L2"] ++ as2
--- XXX jump先ラベルを生成しろ！
+    AsmOp $ Op1 "je" ifLabel, AsmOp $ Op1 "jmp" elseLabel, AsmLabel ifLabel] ++
+    as1 ++ [AsmLabel elseLabel] ++ as2
 asmStatement (While e s) = do
   ae <- asmExpression e
   as <- asmStatement s
-  return $ [AsmLabel "BeginWhile"] ++ ae ++
-    [AsmOp $ Op2 "cmp" "eax" "0", AsmOp $ Op1 "je" "EndWhile"] ++ as ++
-    [AsmOp $ Op1 "jmp" "BeginWhile", AsmLabel "EndWhile"]
+  beginLabel <- genAsmLabel
+  endLabel <- genAsmLabel
+  return $ [AsmLabel beginLabel] ++ ae ++
+    [AsmOp $ Op2 "cmp" "eax" "0", AsmOp $ Op1 "je" endLabel] ++ as ++
+    [AsmOp $ Op1 "jmp" beginLabel, AsmLabel endLabel]
 -- XXX retラベルにジャンプしろ！
 asmStatement (Return e) = do
   ae <- asmExpression e
@@ -80,24 +89,25 @@ asmExpression (ExprList e) = concat <$> mapM asmExpression e
 asmExpression (Assign i e) = do
   ae <- asmExpression e
   return $ ae ++ [AsmOp $ Op2 "mov" (showRegister i) "eax"]
--- XXX jump先ラベルを生成しろ！
 asmExpression (Or e1 e2) = do
   ae1 <- asmExpression e1
   ae2 <- asmExpression e2
+  orLabel <- genAsmLabel
   return $ [AsmOp $ Op1 "push" "1"] ++ ae1 ++
-    [AsmOp $ Op2 "cmp" "eax" "1", AsmOp $ Op1 "je" "L"] ++ ae2 ++
-    [AsmOp $ Op2 "cmp" "eax" "1", AsmOp $ Op1 "je" "L",
+    [AsmOp $ Op2 "cmp" "eax" "1", AsmOp $ Op1 "je" orLabel] ++ ae2 ++
+    [AsmOp $ Op2 "cmp" "eax" "1", AsmOp $ Op1 "je" orLabel,
       AsmOp $ Op1 "pop" "eax", AsmOp $ Op1 "push" "0",
-      AsmLabel "L", AsmOp $ Op1 "pop" "eax"]
+      AsmLabel orLabel, AsmOp $ Op1 "pop" "eax"]
 -- XXX jump先ラベルを生成しろ！
 asmExpression (And e1 e2) = do
   ae1 <- asmExpression e1
   ae2 <- asmExpression e2
+  andLabel <- genAsmLabel
   return $ [AsmOp $ Op1 "push" "0"] ++ ae1 ++
-    [AsmOp $ Op2 "cmp" "eax" "0", AsmOp $ Op1 "je" "L"] ++ ae2 ++
-    [AsmOp $ Op2 "cmp" "eax" "0", AsmOp $ Op1 "je" "L",
+    [AsmOp $ Op2 "cmp" "eax" "0", AsmOp $ Op1 "je" andLabel] ++ ae2 ++
+    [AsmOp $ Op2 "cmp" "eax" "0", AsmOp $ Op1 "je" andLabel,
       AsmOp $ Op1 "pop" "eax", AsmOp $ Op1 "push" "1",
-      AsmLabel "L", AsmOp $ Op1 "pop" "eax"]
+      AsmLabel andLabel, AsmOp $ Op1 "pop" "eax"]
 asmExpression (Equal e1 e2) = asmCompare e1 e2 "sete"
 asmExpression (NotEqual e1 e2) = asmCompare e1 e2 "setne"
 asmExpression (Lt e1 e2) = asmCompare e1 e2 "setl"
@@ -113,6 +123,7 @@ asmExpression (UnaryMinus e) = do
   return $ ae ++ [AsmOp $ Op2 "imul" "eax" "-1"]
 asmExpression (FunctionCall i a) = do
   aal <- asmArgumentList a
+  -- XXX genAsmLabelで作ったやつにする
   return $ aal ++ [AsmOp $ Op1 "call" $ show i,
     AsmOp $ Op2 "add" "esp" $ show $ 4 * (argLength a)]
       where

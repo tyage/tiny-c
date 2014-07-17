@@ -1,5 +1,11 @@
 int foo(int x) {
   int y;
   y = x * x;
+  if (y == 1 && x > 2) {
+    y = y + 1;
+  }
+  while (y < 4) {
+    y = y + 1;
+  }
   return y + 2;
 }

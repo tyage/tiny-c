@@ -92,6 +92,7 @@ type Level = Int
 
 type Asm = State AsmEnvironment [AsmCode]
 
+-- XXX 関数call用ラベルと、現在の関数をretする用のラベルを保存する
 type AsmEnvironment = Int
 
 data AsmCode = AsmGlobal Label
