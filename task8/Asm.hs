@@ -37,7 +37,6 @@ asmFunctionDefinition (FunctionDefinition d p c) = do
   acs <- asmCompoundStatement c
   return $ [
       AsmGlobal $ showGlobal identifier,
-      -- XXX genAsmLabelにする
       AsmLabel $ showGlobal identifier,
       AsmOp $ Op1 "push" "ebp",
       AsmOp $ Op2 "mov" "ebp" "esp",
@@ -86,13 +85,10 @@ asmStatement (While e s) = do
   return $ [AsmLabel beginLabel] ++ ae ++
     [AsmOp $ Op2 "cmp" "eax" "0", AsmOp $ Op1 "je" endLabel] ++ as ++
     [AsmOp $ Op1 "jmp" beginLabel, AsmLabel endLabel]
--- XXX retラベルにジャンプしろ！
 asmStatement (Return e) = do
   retLabel <- getReturnLabel
   ae <- asmExpression e
-  return $ ae ++ [
-      AsmOp $ Op1 "jmp" retLabel
-    ]
+  return $ ae ++ [AsmOp $ Op1 "jmp" retLabel]
 
 asmExpression :: Expr -> Asm
 asmExpression (ExprList e) = concat <$> mapM asmExpression e
@@ -108,7 +104,6 @@ asmExpression (Or e1 e2) = do
     [AsmOp $ Op2 "cmp" "eax" "1", AsmOp $ Op1 "je" orLabel,
       AsmOp $ Op1 "pop" "eax", AsmOp $ Op1 "push" "0",
       AsmLabel orLabel, AsmOp $ Op1 "pop" "eax"]
--- XXX jump先ラベルを生成しろ！
 asmExpression (And e1 e2) = do
   andLabel <- genAsmLabel
   ae1 <- asmExpression e1
@@ -133,8 +128,7 @@ asmExpression (UnaryMinus e) = do
   return $ ae ++ [AsmOp $ Op2 "imul" "eax" "-1"]
 asmExpression (FunctionCall i a) = do
   aal <- asmArgumentList a
-  -- XXX genAsmLabelで作ったやつにする
-  return $ aal ++ [AsmOp $ Op1 "call" $ show i,
+  return $ aal ++ [AsmOp $ Op1 "call" $ showGlobal i,
     AsmOp $ Op2 "add" "esp" $ show $ 4 * (argLength a)]
       where
         argLength (ArgumentExprList e) = length e

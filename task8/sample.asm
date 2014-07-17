@@ -71,3 +71,12 @@ L0:
 mov	esp, ebp
 pop	ebp
 ret
+GLOBAL	_g
+_g:
+push	ebp
+mov	ebp, esp
+sub	esp, 128
+L6:
+mov	esp, ebp
+pop	ebp
+ret
