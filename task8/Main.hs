@@ -22,7 +22,7 @@ compile filename input = case parse program "TinyC" input of
     -- XXX デバッグ用に一時的に標準出力に出す
     putStrLn asm
       where
-        asm = concat $ intersperse "\n" $ map show $ asmProgram programTree
+        asm = concat $ intersperse "\n" $ map show $ evalState (asmProgram programTree) 0
         programTree = fst $ result
         errorMessages = concat $ intersperse "\n" $ map show $ snd $ result
         errorFound = find isError $ snd result

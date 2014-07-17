@@ -90,7 +90,9 @@ type Level = Int
 
 -- Asm
 
-type Asm = [AsmCode]
+type Asm = State AsmEnvironment [AsmCode]
+
+type AsmEnvironment = Int
 
 data AsmCode = AsmGlobal Label
              | AsmLabel Label
