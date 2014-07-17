@@ -1,6 +1,7 @@
 module Main where
 
 import System.Environment
+import System.IO
 import Text.ParserCombinators.Parsec
 import Control.Monad.State
 import Control.Monad.Writer
@@ -13,19 +14,17 @@ import Show
 import Semantic
 import Asm
 
-compile :: String -> String -> IO ()
-compile filename input = case parse program "TinyC" input of
-  Left err -> putStrLn $ show err
+compile :: String -> IO ()
+compile input = case parse program "TinyC" input of
+  Left err -> hPutStr stderr $ show err
   Right program -> do
-    putStrLn $ show errorMessages
-    when (isNothing errorFound) (writeFile filename asm)
-    -- XXX デバッグ用に一時的に標準出力に出す
-    putStrLn asm
+    hPutStr stderr errorMessages
+    when (isNothing errorFound) (putStrLn asm)
       where
         asm = concat $ intersperse "\n" $ map show $ evalState (asmProgram programTree) initialAsmEnv
         initialAsmEnv = (AsmEnvironment 0 "")
         programTree = fst $ result
-        errorMessages = concat $ intersperse "\n" $ map show $ snd $ result
+        errorMessages = concat $ map (\ x -> show x ++ "\n") $ snd $ result
         errorFound = find isError $ snd result
         result = fromJust $ runWriterT $ evalStateT (semanticCheck program) initialEnv
         initialEnv = (Environment (TokensTable Nothing []))
@@ -36,6 +35,5 @@ isError (WarningMessage w) = False
 
 main :: IO ()
 main = do
-  input <- getArgs
-  file <- readFile (head input)
-  compile "sample.asm" file
+  input <- getContents
+  compile input

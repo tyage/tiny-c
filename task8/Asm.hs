@@ -122,7 +122,9 @@ asmExpression (Ge e1 e2) = asmCompare e1 e2 "setge"
 asmExpression (Plus e1 e2) = asmArithmetic e1 e2 "add"
 asmExpression (Minus e1 e2) = asmArithmetic e1 e2 "sub"
 asmExpression (Multiple e1 e2) = asmArithmetic e1 e2 "imul"
-asmExpression (Divide e1 e2) = asmArithmetic e1 e2 "idiv\tdword"
+asmExpression (Divide e1 e2) = do
+  aRSL <- asmRSL e1 e2
+  return $ aRSL ++ [AsmOp $ Op0 "cdq", AsmOp $ Op1 "idiv\tdword" "ebx"]
 asmExpression (UnaryMinus e) = do
   ae <- asmExpression e
   return $ ae ++ [AsmOp $ Op2 "imul" "eax" "-1"]
@@ -151,7 +153,7 @@ asmCompare e1 e2 op = do
     AsmOp $ Op1 op "al", AsmOp $ Op2 "movzx" "eax" "al"]
 
 asmArithmetic :: Expr -> Expr -> String -> Asm
-asmArithmetic e1 e2 op =do
+asmArithmetic e1 e2 op = do
   aRSL <- asmRSL e1 e2
   return $ aRSL ++ [AsmOp $ Op2 op "eax" "ebx"]
 

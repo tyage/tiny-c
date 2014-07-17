@@ -1,2 +1,4 @@
 Main
-sample
+test
+*.err
+*.asm
