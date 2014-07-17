@@ -9,9 +9,19 @@ import Show
 
 genAsmLabel :: State AsmEnvironment Label
 genAsmLabel = do
-  label <- get
-  put $ label + 1
-  return $ "L" ++ show label
+  env <- get
+  put $ env { asmLabelCounter = (asmLabelCounter env) + 1 }
+  return $ "L" ++ show (asmLabelCounter env)
+
+putReturnLabel :: Label -> State AsmEnvironment ()
+putReturnLabel l = do
+  env <- get
+  put $ env { returnLabel = l }
+
+getReturnLabel :: State AsmEnvironment Label
+getReturnLabel = do
+  env <- get
+  return $ (returnLabel env)
 
 asmProgram :: Program -> Asm
 asmProgram (ExDeclList e) = concat <$> mapM asmExternalDeclaration e
@@ -22,8 +32,9 @@ asmExternalDeclaration (FuncDef f) = asmFunctionDefinition f
 
 asmFunctionDefinition :: FunctionDefinition -> Asm
 asmFunctionDefinition (FunctionDefinition d p c) = do
-  acs <- asmCompoundStatement c
   retLabel <- genAsmLabel
+  putReturnLabel retLabel
+  acs <- asmCompoundStatement c
   return $ [
       AsmGlobal $ showGlobal identifier,
       -- XXX genAsmLabelにする
@@ -59,29 +70,28 @@ asmStatement EmptyStatement = return []
 asmStatement (ExpressionStmt e) = asmExpression e
 asmStatement (CompoundStmt c) = asmCompoundStatement c
 asmStatement (If e s1 s2) = do
+  ifLabel <- genAsmLabel
+  elseLabel <- genAsmLabel
   ae <- asmExpression e
   as1 <- asmStatement s1
   as2 <- asmStatement s2
-  ifLabel <- genAsmLabel
-  elseLabel <- genAsmLabel
   return $ ae ++ [AsmOp $ Op2 "cmp" "eax" "1",
     AsmOp $ Op1 "je" ifLabel, AsmOp $ Op1 "jmp" elseLabel, AsmLabel ifLabel] ++
     as1 ++ [AsmLabel elseLabel] ++ as2
 asmStatement (While e s) = do
-  ae <- asmExpression e
-  as <- asmStatement s
   beginLabel <- genAsmLabel
   endLabel <- genAsmLabel
+  ae <- asmExpression e
+  as <- asmStatement s
   return $ [AsmLabel beginLabel] ++ ae ++
     [AsmOp $ Op2 "cmp" "eax" "0", AsmOp $ Op1 "je" endLabel] ++ as ++
     [AsmOp $ Op1 "jmp" beginLabel, AsmLabel endLabel]
 -- XXX retラベルにジャンプしろ！
 asmStatement (Return e) = do
+  retLabel <- getReturnLabel
   ae <- asmExpression e
   return $ ae ++ [
-      AsmOp $ Op2 "mov" "esp" "ebp",
-      AsmOp $ Op1 "pop" "ebp",
-      AsmOp $ Op0 "ret"
+      AsmOp $ Op1 "jmp" retLabel
     ]
 
 asmExpression :: Expr -> Asm
@@ -90,9 +100,9 @@ asmExpression (Assign i e) = do
   ae <- asmExpression e
   return $ ae ++ [AsmOp $ Op2 "mov" (showRegister i) "eax"]
 asmExpression (Or e1 e2) = do
+  orLabel <- genAsmLabel
   ae1 <- asmExpression e1
   ae2 <- asmExpression e2
-  orLabel <- genAsmLabel
   return $ [AsmOp $ Op1 "push" "1"] ++ ae1 ++
     [AsmOp $ Op2 "cmp" "eax" "1", AsmOp $ Op1 "je" orLabel] ++ ae2 ++
     [AsmOp $ Op2 "cmp" "eax" "1", AsmOp $ Op1 "je" orLabel,
@@ -100,9 +110,9 @@ asmExpression (Or e1 e2) = do
       AsmLabel orLabel, AsmOp $ Op1 "pop" "eax"]
 -- XXX jump先ラベルを生成しろ！
 asmExpression (And e1 e2) = do
+  andLabel <- genAsmLabel
   ae1 <- asmExpression e1
   ae2 <- asmExpression e2
-  andLabel <- genAsmLabel
   return $ [AsmOp $ Op1 "push" "0"] ++ ae1 ++
     [AsmOp $ Op2 "cmp" "eax" "0", AsmOp $ Op1 "je" andLabel] ++ ae2 ++
     [AsmOp $ Op2 "cmp" "eax" "0", AsmOp $ Op1 "je" andLabel,
