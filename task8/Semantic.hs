@@ -255,7 +255,7 @@ checkExpression (FunctionCall i a) = do
   return $ FunctionCall (newIdentifier ci) ca
     where
       newIdentifier ci = case ci of
-        (TokenIdentifier (FreshToken)) -> (TokenIdentifier (UndefinedFunctionToken i 0 0))
+        (TokenIdentifier (FreshToken)) -> (TokenIdentifier (UndefinedFunctionToken i 0 $ argumentLength a))
         ident -> ident
       argumentLength (ArgumentExprList a) = length a
 checkExpression (Ident i) = do
