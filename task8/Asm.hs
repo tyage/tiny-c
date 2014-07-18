@@ -142,7 +142,7 @@ asmExpression (Const c) = return [AsmOp $ Op2 "mov" "eax" $ show c]
 asmExpression (Parens e) = asmExpression e
 
 asmArgumentList :: ArgumentExprList -> Asm
-asmArgumentList (ArgumentExprList a) = concat <$> mapM asmArgument a
+asmArgumentList (ArgumentExprList a) = concat <$> mapM asmArgument (reverse a)
 
 asmArgument :: Expr -> Asm
 asmArgument e =do

@@ -133,9 +133,7 @@ checkFunctionDeclarator (Declarator i) (ParameterTypeList p) = do
 checkParameterTypeList :: ParameterTypeList -> ErrorChecker ParameterTypeList
 checkParameterTypeList (ParameterTypeList p) = do
   createTokensTable
-  ParameterTypeList <$> (mapM checkParameterDeclaration $ zip offsetList p)
-    where
-      offsetList = reverse [0..((length p) - 1)]
+  ParameterTypeList <$> (mapM checkParameterDeclaration $ zip [0..] p)
 
 checkParameterDeclaration:: (Int, ParameterDeclaration) -> ErrorChecker ParameterDeclaration
 checkParameterDeclaration (offset, ParameterDeclaration d) = ParameterDeclaration <$>
