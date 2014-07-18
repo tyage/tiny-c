@@ -36,8 +36,8 @@ asmFunctionDefinition (FunctionDefinition d p c) = do
   putReturnLabel retLabel
   acs <- asmCompoundStatement c
   return $ [
-      AsmGlobal $ showGlobal identifier,
-      AsmLabel $ showGlobal identifier,
+      AsmGlobal $ show identifier,
+      AsmLabel $ show identifier,
       AsmOp $ Op1 "push" "ebp",
       AsmOp $ Op2 "mov" "ebp" "esp",
       -- XXX 局所変数の最大値を本来は計算するべき
@@ -130,9 +130,12 @@ asmExpression (UnaryMinus e) = do
   return $ ae ++ [AsmOp $ Op2 "imul" "eax" "-1"]
 asmExpression (FunctionCall i a) = do
   aal <- asmArgumentList a
-  return $ aal ++ [AsmOp $ Op1 "call" $ showGlobal i,
+  return $ aal ++ extern ++ [AsmOp $ Op1 "call" $ show i,
     AsmOp $ Op2 "add" "esp" $ show $ 4 * (argLength a)]
       where
+        extern = if (isUndefined i) then [AsmOp $ Op1 "EXTERN" $ show i] else []
+        isUndefined (TokenIdentifier (UndefinedFunctionToken i l p)) = True
+        isUndefined _ = False
         argLength (ArgumentExprList e) = length e
 asmExpression (Ident i) = return [AsmOp $ Op2 "mov" "eax" $ showRegister i]
 asmExpression (Const c) = return [AsmOp $ Op2 "mov" "eax" $ show c]

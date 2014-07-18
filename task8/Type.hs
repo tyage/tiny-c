@@ -63,6 +63,7 @@ data Identifier = Identifier String
 data Token = VariableToken Identifier Level Offset
            | ParameterToken Identifier Level Offset
            | FunctionToken Identifier Level ParameterLength
+           | UndefinedFunctionToken Identifier Level ParameterLength
            | FreshToken
            deriving (Eq)
 

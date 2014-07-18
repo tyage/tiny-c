@@ -13,6 +13,7 @@ instance Show Token where
   show (VariableToken i l o) = show i
   show (ParameterToken i l o) = show i
   show (FunctionToken i l p) = show i
+  show (UndefinedFunctionToken i l p) = show i
   show FreshToken = ""
 
 instance Show ErrorMessage where
