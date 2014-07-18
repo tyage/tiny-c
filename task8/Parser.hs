@@ -11,7 +11,18 @@ import Text.Parsec.Language (javaStyle)
 
 import Type
 
-lexer  = Token.makeTokenParser javaStyle
+alpha = ['a' .. 'z'] ++ ['A' .. 'Z']
+alnum = alpha ++ ['0' .. '9']
+
+tinyCStyle = javaStyle {
+    Token.nestedComments = False,
+    Token.reservedNames = ["if", "else", "while", "int", "return"],
+    Token.reservedOpNames = ["*", "/", "+", "-", ">", "<",
+                              ">=", "=<", "==", "!=", "&&", "||", "="],
+    Token.identStart = oneOf $ alpha,
+    Token.identLetter = oneOf $ alnum ++ ['_']
+  }
+lexer  = Token.makeTokenParser tinyCStyle
 natural = Token.natural lexer
 reservedOp = Token.reservedOp lexer
 reserved = Token.reserved lexer
