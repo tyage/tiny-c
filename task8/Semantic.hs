@@ -250,10 +250,13 @@ checkExpression (FunctionCall i a) = do
         " (expected " ++ show p ++ " but actually " ++ (show $ argumentLength a) ++ ")"]
     _ -> return ()
 
-  liftM2 FunctionCall ci ca
+  ci <- checkIdentifier i
+  ca <- checkArgumentExprList a
+  return $ FunctionCall (newIdentifier ci) ca
     where
-      ci = checkIdentifier i
-      ca = checkArgumentExprList a
+      newIdentifier ci = case ci of
+        (TokenIdentifier (FreshToken)) -> (TokenIdentifier (FunctionToken i 0 0))
+        ident -> ident
       argumentLength (ArgumentExprList a) = length a
 checkExpression (Ident i) = do
   -- 変数が参照できない場合・関数である場合はエラー
