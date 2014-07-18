@@ -69,14 +69,14 @@ asmStatement EmptyStatement = return []
 asmStatement (ExpressionStmt e) = asmExpression e
 asmStatement (CompoundStmt c) = asmCompoundStatement c
 asmStatement (If e s1 s2) = do
-  ifLabel <- genAsmLabel
   elseLabel <- genAsmLabel
+  endifLabel <- genAsmLabel
   ae <- asmExpression e
   as1 <- asmStatement s1
   as2 <- asmStatement s2
-  return $ ae ++ [AsmOp $ Op2 "cmp" "eax" "1",
-    AsmOp $ Op1 "je" ifLabel, AsmOp $ Op1 "jmp" elseLabel, AsmLabel ifLabel] ++
-    as1 ++ [AsmLabel elseLabel] ++ as2
+  return $ ae ++ [AsmOp $ Op2 "cmp" "eax" "0", AsmOp $ Op1 "je" elseLabel] ++
+    as1 ++ [AsmOp $ Op1 "jmp" endifLabel, AsmLabel elseLabel] ++ as2 ++
+    [AsmLabel endifLabel]
 asmStatement (While e s) = do
   beginLabel <- genAsmLabel
   endLabel <- genAsmLabel
@@ -100,8 +100,8 @@ asmExpression (Or e1 e2) = do
   ae1 <- asmExpression e1
   ae2 <- asmExpression e2
   return $ [AsmOp $ Op1 "push" "1"] ++ ae1 ++
-    [AsmOp $ Op2 "cmp" "eax" "1", AsmOp $ Op1 "je" orLabel] ++ ae2 ++
-    [AsmOp $ Op2 "cmp" "eax" "1", AsmOp $ Op1 "je" orLabel,
+    [AsmOp $ Op2 "cmp" "eax" "0", AsmOp $ Op1 "jne" orLabel] ++ ae2 ++
+    [AsmOp $ Op2 "cmp" "eax" "0", AsmOp $ Op1 "jne" orLabel,
       AsmOp $ Op1 "pop" "eax", AsmOp $ Op1 "push" "0",
       AsmLabel orLabel, AsmOp $ Op1 "pop" "eax"]
 asmExpression (And e1 e2) = do
@@ -124,7 +124,7 @@ asmExpression (Minus e1 e2) = asmArithmetic e1 e2 "sub"
 asmExpression (Multiple e1 e2) = asmArithmetic e1 e2 "imul"
 asmExpression (Divide e1 e2) = do
   aRSL <- asmRSL e1 e2
-  return $ aRSL ++ [AsmOp $ Op0 "cdq", AsmOp $ Op1 "idiv\tdword" "ebx"]
+  return $ aRSL ++ [AsmOp $ Op0 "cdq", AsmOp $ Op1 "idiv\tdword" "ecx"]
 asmExpression (UnaryMinus e) = do
   ae <- asmExpression e
   return $ ae ++ [AsmOp $ Op2 "imul" "eax" "-1"]
@@ -149,17 +149,17 @@ asmArgument e =do
 asmCompare :: Expr -> Expr -> String -> Asm
 asmCompare e1 e2 op = do
   aRSL <- asmRSL e1 e2
-  return $ aRSL ++ [AsmOp $ Op2 "cmp" "eax" "ebx",
+  return $ aRSL ++ [AsmOp $ Op2 "cmp" "eax" "ecx",
     AsmOp $ Op1 op "al", AsmOp $ Op2 "movzx" "eax" "al"]
 
 asmArithmetic :: Expr -> Expr -> String -> Asm
 asmArithmetic e1 e2 op = do
   aRSL <- asmRSL e1 e2
-  return $ aRSL ++ [AsmOp $ Op2 op "eax" "ebx"]
+  return $ aRSL ++ [AsmOp $ Op2 op "eax" "ecx"]
 
 asmRSL :: Expr -> Expr -> Asm
 asmRSL e1 e2 = do
   ae2 <- asmExpression e2
   ae1 <- asmExpression e1
   return $ ae2++ [AsmOp $ Op1 "push" "eax"] ++
-    ae1 ++ [AsmOp $ Op1 "pop" "ebx"]
+    ae1 ++ [AsmOp $ Op1 "pop" "ecx"]

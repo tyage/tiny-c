@@ -4,11 +4,14 @@ int test_calc(int x, int y) {
   return z * x + (y * 7 / 4);
 }
 int test_if(int x) {
-  if (x == 1) {
-    return 1;
+  int y;
+  y = 0;
+  if (2) {
+    y = 1;
   } else {
-    return 0;
+    y = 2;
   }
+  return y;
 }
 int test_while(int x) {
   int y;

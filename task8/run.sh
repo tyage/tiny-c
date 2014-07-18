@@ -10,5 +10,5 @@ case "$OSTYPE" in
 		nasm -f elf $1.asm
 		;;
 esac
-gcc -fno-pie -m32 -o $1 $1.o main.c
-./$1
+gcc -fno-pie -m32 -o $1.out $1.o main.c
+./$1.out
