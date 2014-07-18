@@ -244,7 +244,7 @@ checkExpression (FunctionCall i a) = do
   case t of
     Just (VariableToken i l o) -> tell [ErrorMessage $ "variable '" ++ show i ++ "' is used as function"]
     Just (ParameterToken i l o) -> tell [ErrorMessage $ "variable '" ++ show i ++ "' is used as function"]
-    Nothing -> tell [ErrorMessage $ "'" ++ show i ++ "' undeclared function"]
+    Nothing -> tell [WarningMessage $ "'" ++ show i ++ "' undeclared function"]
     Just (FunctionToken i l p) -> when (p /= argumentLength a) $
       tell [ErrorMessage $ "parameter length does not match to function " ++ show i ++
         " (expected " ++ show p ++ " but actually " ++ (show $ argumentLength a) ++ ")"]
