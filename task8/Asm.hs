@@ -74,8 +74,8 @@ asmStatement (If e s1 s2) = do
   ae <- asmExpression e
   as1 <- asmStatement s1
   as2 <- asmStatement s2
-  return $ ae ++ [AsmOp $ Op2 "cmp" "eax" "0", AsmOp $ Op1 "je" elseLabel] ++
-    as1 ++ [AsmOp $ Op1 "jmp" endifLabel, AsmLabel elseLabel] ++ as2 ++
+  return $ ae ++ [AsmOp $ Op2 "cmp" "eax" "0", AsmOp $ Op1 "je\tnear" elseLabel] ++
+    as1 ++ [AsmOp $ Op1 "jmp\tnear" endifLabel, AsmLabel elseLabel] ++ as2 ++
     [AsmLabel endifLabel]
 asmStatement (While e s) = do
   beginLabel <- genAsmLabel
@@ -83,12 +83,12 @@ asmStatement (While e s) = do
   ae <- asmExpression e
   as <- asmStatement s
   return $ [AsmLabel beginLabel] ++ ae ++
-    [AsmOp $ Op2 "cmp" "eax" "0", AsmOp $ Op1 "je" endLabel] ++ as ++
-    [AsmOp $ Op1 "jmp" beginLabel, AsmLabel endLabel]
+    [AsmOp $ Op2 "cmp" "eax" "0", AsmOp $ Op1 "je\tnear" endLabel] ++ as ++
+    [AsmOp $ Op1 "jmp\tnear" beginLabel, AsmLabel endLabel]
 asmStatement (Return e) = do
   retLabel <- getReturnLabel
   ae <- asmExpression e
-  return $ ae ++ [AsmOp $ Op1 "jmp" retLabel]
+  return $ ae ++ [AsmOp $ Op1 "jmp\tnear" retLabel]
 
 asmExpression :: Expr -> Asm
 asmExpression (ExprList e) = concat <$> mapM asmExpression e
@@ -100,8 +100,8 @@ asmExpression (Or e1 e2) = do
   ae1 <- asmExpression e1
   ae2 <- asmExpression e2
   return $ [AsmOp $ Op1 "push" "1"] ++ ae1 ++
-    [AsmOp $ Op2 "cmp" "eax" "0", AsmOp $ Op1 "jne" orLabel] ++ ae2 ++
-    [AsmOp $ Op2 "cmp" "eax" "0", AsmOp $ Op1 "jne" orLabel,
+    [AsmOp $ Op2 "cmp" "eax" "0", AsmOp $ Op1 "jne\tnear" orLabel] ++ ae2 ++
+    [AsmOp $ Op2 "cmp" "eax" "0", AsmOp $ Op1 "jne\tnear" orLabel,
       AsmOp $ Op1 "pop" "eax", AsmOp $ Op1 "push" "0",
       AsmLabel orLabel, AsmOp $ Op1 "pop" "eax"]
 asmExpression (And e1 e2) = do
@@ -109,8 +109,8 @@ asmExpression (And e1 e2) = do
   ae1 <- asmExpression e1
   ae2 <- asmExpression e2
   return $ [AsmOp $ Op1 "push" "0"] ++ ae1 ++
-    [AsmOp $ Op2 "cmp" "eax" "0", AsmOp $ Op1 "je" andLabel] ++ ae2 ++
-    [AsmOp $ Op2 "cmp" "eax" "0", AsmOp $ Op1 "je" andLabel,
+    [AsmOp $ Op2 "cmp" "eax" "0", AsmOp $ Op1 "je\tnear" andLabel] ++ ae2 ++
+    [AsmOp $ Op2 "cmp" "eax" "0", AsmOp $ Op1 "je\tnear" andLabel,
       AsmOp $ Op1 "pop" "eax", AsmOp $ Op1 "push" "1",
       AsmLabel andLabel, AsmOp $ Op1 "pop" "eax"]
 asmExpression (Equal e1 e2) = asmCompare e1 e2 "sete"
