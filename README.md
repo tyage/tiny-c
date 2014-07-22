@@ -12,9 +12,10 @@ Tiny C Compiler
 - ghc
 - cabal
     - mtl
+    - parsec
 
 ```sh
 $ sudo apt-get install ghc cabal-install
 $ cabal update
-$ cabal install mtl
+$ cabal install mtl parsec
 ```
